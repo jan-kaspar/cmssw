@@ -19,6 +19,11 @@
 #include "Geometry/Records/interface/VeryForwardMisalignedGeometryRecord.h"
 #include "Geometry/VeryForwardGeometryBuilder/interface/TotemRPGeometry.h"
 
+#include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
+#include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h"
+#include "DataFormats/CTPPSDetId/interface/CTPPSPixelDetId.h"
+#include "DataFormats/CTPPSDetId/interface/CTPPSDiamondDetId.h"
+
 //----------------------------------------------------------------------------------------------------
 
 /**
@@ -37,7 +42,7 @@ class GeometryInfoModule : public edm::one::EDAnalyzer<>
     {
       unsigned int N, N_u, N_v;
       double Sx, Sy, Sz, Sdx_u, Sdx_v, Sdy_u, Sdy_v;
-    
+
       MeanRPData() : N(0), N_u(0), N_v(0), Sx(0.), Sy(0.), Sz(0.), Sdx_u(0.), Sdx_v(0.), Sdy_u(0.), Sdy_v(0.) {}
 
       void Fill(double x, double y, double z, bool uDir, double dx, double dy)
@@ -164,11 +169,13 @@ void GeometryInfoModule::PrintGeometry(const TotemRPGeometry &geometry, const ed
     printf("  ID |   x (mm)    |   y (mm)    |   z  (m)  |\n");
     for (TotemRPGeometry::RPDeviceMapType::const_iterator it = geometry.beginRP(); it != geometry.endRP(); ++it)
     {
+      CTPPSDetId rpId(it->first);
       const DDTranslation &t = it->second->translation();
-      printf(" %3i | %+11.3f | %+11.3f | %+9.4f |\n", it->first, t.x(), t.y(), t.z() * 1E-3);
+      cout <<  rpId;
+      printf(" | %+11.3f | %+11.3f | %+9.4f |\n", t.x(), t.y(), t.z() * 1E-3);
     }
   }
-  
+
   // sensor geometry
   if (printSensorInfo)
   {
@@ -177,19 +184,47 @@ void GeometryInfoModule::PrintGeometry(const TotemRPGeometry &geometry, const ed
     printf("      |   x (mm)   |   y (mm)   |   z  (m)   |    dx    |    dy    |\n");
     for (TotemRPGeometry::mapType::const_iterator it = geometry.beginDet(); it != geometry.endDet(); ++it)
     {
-      TotemRPDetId id(it->first);
-  
+      CTPPSDetId detId(it->first);
+
       double x = it->second->translation().x();
       double y = it->second->translation().y();
       double z = it->second->translation().z() * 1E-3;
-  
+
       double dx = 0., dy = 0.;
       geometry.GetReadoutDirection(it->first, dx, dy);
-  
-      printf("%4i  |  %8.3f  |  %8.3f  |  %9.4f | %8.3f | %8.3f |\n", id.getPlaneDecimalId(), x, y, z, dx, dy);
+
+      cout << it->first << " (";
+
+      bool idPrinted = false;
+
+      if (detId.subdetId() == 3)
+      {
+        TotemRPDetId stripDetId(detId);
+        cout << "strip: " << stripDetId;
+        idPrinted = true;
+      }
+
+      if (detId.subdetId() == 4)
+      {
+        CTPPSPixelDetId pixelDetId(detId);
+        cout << "pixel: " << pixelDetId;
+        idPrinted = true;
+      }
+
+      if (detId.subdetId() == 5)
+      {
+        CTPPSDiamondDetId diamondDetId(detId);
+        cout << "diamond: " << diamondDetId;
+        idPrinted = true;
+      }
+
+      if (!idPrinted)
+        cout << detId;
+
+      printf(")  |  %8.3f  |  %8.3f  |  %9.4f | %8.3f | %8.3f |\n", x, y, z, dx, dy);
     }
   }
-  
+
   // sensor geometry averaged over 1 RP
   if (printMeanSensorInfo)
   {
@@ -202,24 +237,24 @@ void GeometryInfoModule::PrintGeometry(const TotemRPGeometry &geometry, const ed
       TotemRPDetId plId(it->first);
       unsigned int rpDecId = plId.getRPDecimalId();
       bool uDirection = plId.isStripsCoordinateUDirection();
-  
+
       double x = it->second->translation().x();
       double y = it->second->translation().y();
       double z = it->second->translation().z() * 1E-3;
-  
+
       double dx = 0., dy = 0.;
       geometry.GetReadoutDirection(it->first, dx, dy);
-  
+
       data[rpDecId].Fill(x, y, z, uDirection, dx, dy);
     }
 
     printf("RPId |                center                |      U direction    |      V direction    |\n");
     printf("     |   x (mm)   |   y (mm)   |   z  (m)   |    dx    |    dy    |    dx    |    dy    |\n");
-    
+
     for (map<unsigned int, MeanRPData>::iterator it = data.begin(); it != data.end(); ++it)
     {
       const MeanRPData &d = it->second;
-  
+
       double mx = (d.N > 0) ? d.Sx / d.N : 0.;
       double my = (d.N > 0) ? d.Sy / d.N : 0.;
       double mz = (d.N > 0) ? d.Sz / d.N : 0.;
@@ -230,7 +265,7 @@ void GeometryInfoModule::PrintGeometry(const TotemRPGeometry &geometry, const ed
       double mdx_v = (d.N_v > 0) ? d.Sdx_v / d.N_v : 0.;
       double mdy_v = (d.N_v > 0) ? d.Sdy_v / d.N_v : 0.;
 
-      
+
       printf(" %3i |  %8.3f  |  %8.3f  |  %9.4f | %8.3f | %8.3f | %8.3f | %8.3f |\n", it->first, mx, my, mz, mdx_u, mdy_u, mdx_v, mdy_v);
     }
   }
