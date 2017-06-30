@@ -81,8 +81,8 @@ class AlignmentTask
     AlignmentTask(const edm::ParameterSet& ps);
 
     /// builds the alignment geometry
-    static void BuildGeometry(const std::vector<unsigned int> &RPIds,
-        const std::vector<unsigned int> excludePlanes, const TotemRPGeometry *,
+    static void BuildGeometry(const std::vector<unsigned int> &rpDecIds,
+        const std::vector<unsigned int> &excludedSensors, const TotemRPGeometry *,
         double z0, AlignmentGeometry &geometry);
     
     /// homogeneous constraints from config file

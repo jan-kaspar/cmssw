@@ -9,7 +9,7 @@
 
 #include "Alignment/CTPPS/interface/IdealResult.h"
 #include "Alignment/CTPPS/interface/AlignmentTask.h"
-#include "Alignment/CTPPS/interface/MatrixTools.h"
+#include "Alignment/CTPPS/interface/utilities.h"
 
 #include "Geometry/Records/interface/VeryForwardRealGeometryRecord.h"
 #include "Geometry/Records/interface/VeryForwardMisalignedGeometryRecord.h"
@@ -59,11 +59,9 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
 
   // collect true misalignments
   const unsigned int D = task->geometry.Detectors();
-  const unsigned int R = task->geometry.RPs();
   TVectorD F_ShX(D);
   TVectorD F_ShY(D);
   TVectorD F_ShZ(D);
-  TVectorD F_RPShZ(R);
   TVectorD F_RotZ(D);
   
   TVectorD ca_x(D);
@@ -92,11 +90,9 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
       rot_z = -rot_z;   // sign/convention incompatibility between EulerAngles and RPAlignmentCorrection classes
 
       const unsigned int mi = dit->second.matrixIndex;
-      const unsigned int rmi = dit->second.rpMatrixIndex;
       F_ShX[mi] = shift.x();
       F_ShY[mi] = shift.y();
       F_ShZ[mi] = shift.z();
-      F_RPShZ[rmi] = shift.z();
       F_RotZ[mi] = rot_z;
       
       ca_x[mi] = real->translation().x();
@@ -250,7 +246,7 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
     {
       case AlignmentTask::qcShR: Fc = &F_ShR; break;
       case AlignmentTask::qcShZ: Fc = &F_ShZ; break;
-      case AlignmentTask::qcRPShZ: Fc = &F_RPShZ; break;
+      case AlignmentTask::qcRPShZ: Fc = NULL; break;  // TODO: remove
       case AlignmentTask::qcRotZ: continue;
     }
 
@@ -350,7 +346,7 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
 
     for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
     {
-      unsigned idx = (task->quantityClasses[i] != AlignmentTask::qcRPShZ) ? dit->second.matrixIndex : dit->second.rpMatrixIndex;
+      unsigned idx = dit->second.matrixIndex;
       const double &v = (task->quantityClasses[i] != AlignmentTask::qcRotZ) ? Fnr_sol[offsets[i] + idx] : Fr_sol[idx];
       switch (task->quantityClasses[i])
       {

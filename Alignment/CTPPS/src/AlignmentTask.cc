@@ -13,9 +13,13 @@
 
 #include <algorithm>
 
+//----------------------------------------------------------------------------------------------------
+
 using namespace std;
 using namespace edm;
+using namespace CLHEP;
 
+//----------------------------------------------------------------------------------------------------
 
 
 AlignmentTask::AlignmentTask(const ParameterSet& ps) :
@@ -46,61 +50,51 @@ AlignmentTask::AlignmentTask(const ParameterSet& ps) :
 
 //----------------------------------------------------------------------------------------------------
 
-void AlignmentTask::BuildGeometry(const vector<unsigned int> &RPIds,
-  const std::vector<unsigned int> excludePlanes, const TotemRPGeometry *input, double z0, AlignmentGeometry &geometry)
+void AlignmentTask::BuildGeometry(const vector<unsigned int> &rpDecIds,
+  const vector<unsigned int> &excludedSensors, const TotemRPGeometry *input, double z0, AlignmentGeometry &geometry)
 {
   geometry.clear();
   geometry.z0 = z0; 
 
-  for (vector<unsigned int>::const_iterator rp = RPIds.begin(); rp != RPIds.end(); ++rp)
+  // traverse full known geometry
+  for (auto it = input->beginDet(); it != input->endDet(); ++it)
   {
-    const set<unsigned int> &DetIds = input->DetsInRP(*rp);
+    // skip excluded sensors
+    if (find(excludedSensors.begin(), excludedSensors.end(), it->first) != excludedSensors.end())
+      continue;
 
-    for (set<unsigned int>::iterator det = DetIds.begin(); det != DetIds.end(); ++det)
+    // is RP selected?
+    const CTPPSDetId detId(it->first);
+    const unsigned int rpDecId = 100*detId.arm() + 10*detId.station() + detId.rp();
+    if (find(rpDecIds.begin(), rpDecIds.end(), rpDecId) == rpDecIds.end())
+      continue;
+
+    // extract geometry data
+    Hep3Vector c = input->LocalToGlobal(detId, Hep3Vector(0., 0., 0.));
+    Hep3Vector d1 = input->LocalToGlobal(detId, Hep3Vector(1., 0., 0.)) - c;
+    Hep3Vector d2 = input->LocalToGlobal(detId, Hep3Vector(0., 1., 0.)) - c;
+
+    // for strips: is it U plane?
+    bool isU = false;
+    if (detId.subdetId() == CTPPSDetId::sdTrackingStrip)
     {
-      // TODO
-      //unsigned int rawId = TotRPDetId::DecToRawId(*det);
-      unsigned int rawId = *det;
-
-      CLHEP::Hep3Vector d = input->LocalToGlobalDirection(rawId, CLHEP::Hep3Vector(0., 1., 0.));
-      DDTranslation c = input->GetDetector(rawId)->translation();
-      double z = c.z() - z0;
-
-      unsigned int rpNum = ((*det) / 10) % 10;
-      unsigned int detNum = (*det) % 10;
-      bool isU = (detNum % 2 != 0);
+      TotemRPDetId stripDetId(it->first);
+      unsigned int rpNum = stripDetId.rp();
+      unsigned int plNum = stripDetId.plane();
+      isU = (plNum % 2 != 0);
       if (rpNum == 2 || rpNum == 3)
         isU = !isU;
-
-      bool exclude = false;
-      for (auto p : excludePlanes)
-      {
-        if (p == *det)
-        {
-          exclude = true;
-          break;
-        }
-      }
-
-      if (exclude)
-        continue;
-
-      geometry.Insert(*det, DetGeometry(z, d.x(), d.y(), c.x(), c.y(), isU));
     }
+
+    DetGeometry dg(c.z(), c.x(), c.y(), d1.x(), d1.y(), d2.x(), d2.y(), isU);
+    geometry.Insert(it->first, dg);
   }
 
   // set matrix and rpMatrix indeces
   unsigned int index = 0;
-  unsigned int rpIndex = 0;
-  signed int lastRP = -1;
   for (AlignmentGeometry::iterator it = geometry.begin(); it != geometry.end(); ++it, ++index)
   {
     it->second.matrixIndex = index;
-    signed int rp = it->first / 10;
-    if (lastRP > 0 && lastRP != rp)
-      rpIndex++; 
-    lastRP = rp;
-    it->second.rpMatrixIndex = rpIndex;
   }
 }
 
@@ -122,7 +116,9 @@ string AlignmentTask::QuantityClassTag(QuantityClass qc)
 
 unsigned int AlignmentTask::QuantitiesOfClass(QuantityClass qc)
 {
-  return (qc == qcRPShZ) ? geometry.RPs() : geometry.Detectors();
+  // TODO
+  //return (qc == qcRPShZ) ? geometry.RPs() : geometry.Detectors();
+  return geometry.Detectors();
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -188,19 +184,18 @@ void AlignmentTask::BuildHomogeneousConstraints(vector<AlignmentConstraint> &con
       for (unsigned int idx = 0; idx < indeces; ++idx)
       {
         double &coef = ac.coef[quantityClasses[cl]][idx];
-        const DetGeometry &dt = (quantityClasses[cl] == qcRPShZ) ? 
-          geometry.FindFirstByRPMatrixIndex(idx)->second : geometry.FindByMatrixIndex(idx)->second;
-        double sc = -dt.dx*dt.sy + dt.dy*dt.sx;
+        const DetGeometry &dt = geometry.FindByMatrixIndex(idx)->second;
+        double sc = -dt.d2x*dt.sy + dt.d2y*dt.sx;
 
         switch (quantityClasses[cl])
         {
           case qcShR:
             switch (j)
             {
-              case 0: ac.name = "ShR: z*dx"; coef = dt.z * dt.dx; break;
-              case 1: ac.name = "ShR: dx"; coef = dt.dx; break;
-              case 2: ac.name = "ShR: z*dy"; coef = dt.z * dt.dy; break;
-              case 3: ac.name = "ShR: dy"; coef = dt.dy; break;
+              case 0: ac.name = "ShR: z*dx"; coef = dt.z * dt.d2x; break;
+              case 1: ac.name = "ShR: dx"; coef = dt.d2x; break;
+              case 2: ac.name = "ShR: z*dy"; coef = dt.z * dt.d2y; break;
+              case 3: ac.name = "ShR: dy"; coef = dt.d2y; break;
             }
             break;
 
@@ -307,7 +302,7 @@ void AlignmentTask::BuildFixedDetectorsConstraints(vector<AlignmentConstraint> &
         throw cms::Exception("AlignmentTask::BuildFixedDetectorsConstraints") <<
           "Detector with id " << ids[j] << " is not in the geometry.";
 
-      unsigned int idx = (quantityClasses[cl] == qcRPShZ) ? geometry[ids[j]].rpMatrixIndex : geometry[ids[j]].matrixIndex;
+      unsigned int idx = geometry[ids[j]].matrixIndex;
       ac.coef[quantityClasses[cl]][idx] = 1.;
 
       constraints.push_back(ac);
@@ -429,8 +424,8 @@ void AlignmentTask::BuildOfficialConstraints(vector<AlignmentConstraint> &constr
         if (unitIdx == coUnit && !hor)
         {
           const auto &pl = planesPerPot[rpId];
-          ac_X.coef[qcShR][idx] = dt.dx / pl.all;
-          ac_Y.coef[qcShR][idx] = dt.dy / pl.all;
+          ac_X.coef[qcShR][idx] = dt.d2x / pl.all;
+          ac_Y.coef[qcShR][idx] = dt.d2y / pl.all;
         }
       }
   

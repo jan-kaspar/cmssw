@@ -6,8 +6,11 @@
 *
 ****************************************************************************/
 
+#include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
 
 #include <TMatrixD.h>
+
+extern void PrintId(unsigned int id);
 
 extern void Print(TMatrixD& m, const char *label = NULL, bool mathematicaFormat = false);
 

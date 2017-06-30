@@ -6,13 +6,27 @@
 *
 ****************************************************************************/
 
+#include "Alignment/CTPPS/interface/AlignmentGeometry.h"
+
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Utilities/interface/Exception.h"
 
-#include "Alignment/CTPPS/interface/AlignmentGeometry.h"
+#include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
+#include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h"
 
 using namespace std;
 using namespace edm;
+
+//----------------------------------------------------------------------------------------------------
+
+void AlignmentGeometry::Insert(unsigned int id, const DetGeometry &g)
+{
+  insert(value_type(id, g));
+  
+  rps.insert(CTPPSDetId(id).getRPId());
+}
+
+//----------------------------------------------------------------------------------------------------
 
 unsigned int AlignmentGeometry::MatrixIndexToDetId(unsigned int mi) const
 {
@@ -41,30 +55,18 @@ AlignmentGeometry::const_iterator AlignmentGeometry::FindByMatrixIndex(unsigned 
 
 //----------------------------------------------------------------------------------------------------
 
-AlignmentGeometry::const_iterator AlignmentGeometry::FindFirstByRPMatrixIndex(unsigned int mi) const
-{
-  for (const_iterator it = begin(); it != end(); ++it)
-  {
-    if (it->second.rpMatrixIndex == mi)
-      return it;
-  }
-  return end();
-}
-
-//----------------------------------------------------------------------------------------------------
-
 void AlignmentGeometry::Print() const
 {
   for (const_iterator it = begin(); it != end(); ++it)
   {
     const DetGeometry &d = it->second;
-    printf("%u\t%+E\t%+E\t%+E\t%+E\t%+E\n", it->first, d.z, d.dx, d.dy, d.sx, d.sy);
+    printf("%u\t%+E\t%+E\t%+E\t%+E\t%+E\t%+E\t%+E\n", it->first, d.z, d.sx, d.sy, d.d1x, d.d1y, d.d2x, d.d2y);
   }
 }
 
 //----------------------------------------------------------------------------------------------------
 
-void AlignmentGeometry::LoadFromFile(const std::string filename)
+void AlignmentGeometry::LoadFromFile(const std::string &filename)
 {
   clear();
 
@@ -75,22 +77,32 @@ void AlignmentGeometry::LoadFromFile(const std::string filename)
   while (!feof(f))
   {
     unsigned int id;
-    float x, y, z, dx, dy;
+    float x, y, z, d1x, d1y, d2x, d2y;
 
-    int res = fscanf(f, "%u%E%E%E%E%E", &id, &x, &y, &z, &dx, &dy);
+    int res = fscanf(f, "%u%E%E%E%E%E%E%E", &id, &x, &y, &z, &d1x, &d1y, &d2x, &d2y);
 
-    if (res == 6)
+    if (res == 8)
     {
-      unsigned int rpNum = (id / 10) % 10;
-      unsigned int detNum = id % 10;
-      bool isU = (detNum % 2 != 0);
-      if (rpNum == 2 || rpNum == 3)
-        isU = !isU;
-      Insert(id, DetGeometry(z, dx, dy, x, y, isU));      
+      bool isU = false;
+
+      CTPPSDetId detId(id);
+      if (detId.subdetId() == CTPPSDetId::sdTrackingStrip)
+      {
+        TotemRPDetId stripDetId(id);
+        const unsigned int rpNum = stripDetId.rp();
+        const unsigned int plNum = stripDetId.plane();
+        isU = (plNum % 2 != 0);
+        if (rpNum == 2 || rpNum == 3)
+          isU = !isU;
+      }
+
+      Insert(id, DetGeometry(z, x, y, d1x, d1y, d2x, d2y, isU));      
     } else {
       if (!feof(f))
+      {
         throw cms::Exception("AlignmentGeometry::LoadFromFile") << "Cannot parse file `" << filename
           << "'. The format is probably wrong." << endl;
+      }
     }
   }
 

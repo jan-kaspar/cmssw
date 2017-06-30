@@ -13,30 +13,39 @@
 #include <set>
 #include <string>
 
+//----------------------------------------------------------------------------------------------------
+
 /**
  *\brief A structure to hold relevant geometrical information about one detector/sensor.
  **/
 struct DetGeometry
 {
-  double z;                     ///< mm
-  double dx, dy;                ///< sensitive direction
-  double sx, sy;                ///< detector nominal shift = detector center - beam pipe; in mm
-  double s;                     ///< detector nominal shift in sensitive direction; in mm
+  double z;                     ///< z postion at detector centre; mm
+
+  double sx, sy;                ///< detector nominal shift = detector center in global coordinates; in mm
+
+  double d1x, d1y;              ///< local (1, 0, 0) in global coordinates
+  double d2x, d2y;              ///< local (0, 1, 0) in global coordinates
+
+  double s1;                    ///< detector nominal shift in direction d1
+  double s2;                    ///< detector nominal shift in direction d2
 
   unsigned int matrixIndex;     ///< index (0 ... AlignmentGeometry::Detectors()) within a S matrix block (for detector-related quantities)
-                                ///< assigned by StraightTrackAlignment::PrepareGeometry
 
-  unsigned int rpMatrixIndex;   ///< index (0 ... AlignmentGeometry::RPs()) within a S matrix block (for RP-related quantities)
-                                ///< assigned by StraightTrackAlignment::PrepareGeometry
-
-  bool isU;                     ///< true for U detectors, false for V detectors
+  bool isU;                     ///< only relevant for strips: true for U detectors, false for V detectors
                                 ///< global U, V frame is used - that matches with u, v frame of the 1200 detector
 
-  DetGeometry(double _z = 0., double _dx = 0., double _dy = 0., double _sx = 0., double _sy = 0., bool _isU = false) :
-     z(_z), dx(_dx), dy(_dy), sx(_sx), sy(_sy), s(sx*dx + sy*dy), matrixIndex(0), isU(_isU) {}
+  DetGeometry(double _z = 0., double _sx = 0., double _sy = 0.,
+    double _d1x = 0., double _d1y = 0.,
+    double _d2x = 0., double _d2y = 0.,
+    bool _isU = false) : z(_z), sx(_sx), sy(_sy), d1x(_d1x), d1y(_d1y), d2x(_d2x), d2y(_d2y), matrixIndex(0), isU(_isU)
+  {
+    s1 = sx*d1x + sy*d1y;
+    s2 = sx*d2x + sy*d2y;
+  }
 };
 
-
+//----------------------------------------------------------------------------------------------------
 
 /**
  *\brief A collection of geometrical information.
@@ -52,16 +61,19 @@ class AlignmentGeometry : public std::map<unsigned int, DetGeometry>
     double z0;
 
     /// puts an element to the map
-    void Insert(unsigned int id, const DetGeometry &g)
-      { insert(value_type(id, g)); rps.insert(id / 10); }
-
-    /// returns the number of RPs in the collection
-    unsigned int RPs()
-      { return rps.size(); }
+    void Insert(unsigned int id, const DetGeometry &g);
 
     /// returns the number of detectors in the collection
     unsigned int Detectors()
-      { return size(); }
+    {
+      return size();
+    }
+
+    /// returns the number of RPs in the collection
+    unsigned int RPs()
+    {
+      return rps.size();
+    }
     
     /// returns detector id corresponding to the given matrix index
     unsigned int MatrixIndexToDetId(unsigned int) const;
@@ -69,23 +81,24 @@ class AlignmentGeometry : public std::map<unsigned int, DetGeometry>
     /// returns reference the the geometry of the detector with the given matrix index
     const_iterator FindByMatrixIndex(unsigned int) const;
     
-    /// returns reference the the geometry of the first detector in the RP with the given rpMatrix index
-    const_iterator FindFirstByRPMatrixIndex(unsigned int) const;
-
     /// check whether the sensor Id is valid (present in the map)
     bool ValidSensorId(unsigned int id) const
-      { return (find(id) != end()); }
+    {
+      return (find(id) != end());
+    }
 
     /// check whether the RP Id is valid (present in the set)
     bool ValidRPId(unsigned int id) const
-      { return (rps.find(id) != rps.end()); }
+    {
+      return (rps.find(id) != rps.end());
+    }
 
     /// Prints the geometry.
     void Print() const;
 
     /// loads geometry from a text file of 5 columns:
     /// id | center x, y, z (all in mm) | read-out direction x projection, y projection
-    void LoadFromFile(const std::string filename);
+    void LoadFromFile(const std::string &filename);
 };
 
 #endif

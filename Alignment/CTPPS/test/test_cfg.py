@@ -15,7 +15,7 @@ process.MessageLogger = cms.Service("MessageLogger",
 process.source = cms.Source("EmptySource")
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10)
+    input = cms.untracked.int32(1)
 )
 
 # random seeds
@@ -48,7 +48,7 @@ process.ctppsFastLocalSimulation.verbosity = 10
 # alignment
 process.load("Alignment.CTPPS.ctppsStraightTrackAligner_cfi")
 process.ctppsStraightTrackAligner.verbosity = 10
-process.ctppsStraightTrackAligner.rpIds = cms.vuint32(103, 123)
+process.ctppsStraightTrackAligner.rpIds = cms.vuint32(103, 123) # TODO: add 116
 process.ctppsStraightTrackAligner.algorithms = cms.vstring()
 
 process.eca = cms.EDAnalyzer("EventContentAnalyzer")

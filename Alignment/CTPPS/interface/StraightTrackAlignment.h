@@ -89,7 +89,7 @@ class StraightTrackAlignment
     ConstraintsType constraintsType;
 
     /// stops after this event number has been reached
-    unsigned int maxEvents;
+    signed int maxEvents;
     
     // ---------- hit/track selection parameters ----------                                        
     
@@ -163,9 +163,9 @@ class StraightTrackAlignment
     /// file name for some event selection statistics
     std::string diagnosticsFile;
     
-    unsigned long eventsTotal;                                                ///< counter of events
-    unsigned long eventsFitted;                                               ///< counter of processed tracks
-    unsigned long eventsSelected;                                             ///< counter of processed tracks
+    signed int eventsTotal;                                                   ///< counter of events
+    signed int eventsFitted;                                                  ///< counter of processed tracks
+    signed int eventsSelected;                                                ///< counter of processed tracks
 
     std::map< std::set<unsigned int>, unsigned long> fittedTracksPerRPSet;    ///< counter of fitted tracks in a certain detector set
     std::map< std::set<unsigned int>, unsigned long> selectedTracksPerRPSet;  ///< counter of selected tracks in a certain detector set

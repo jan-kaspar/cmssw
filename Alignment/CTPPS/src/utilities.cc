@@ -6,10 +6,41 @@
 *
 ****************************************************************************/
 
-#include "Alignment/CTPPS/interface/MatrixTools.h"
+#include "Alignment/CTPPS/interface/utilities.h"
+
+#include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
+#include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h"
+#include "DataFormats/CTPPSDetId/interface/CTPPSDiamondDetId.h"
+#include "DataFormats/CTPPSDetId/interface/CTPPSPixelDetId.h"
 
 #include <cmath>
 
+//----------------------------------------------------------------------------------------------------
+
+void PrintId(unsigned int id)
+{
+  CTPPSDetId detId(id);
+
+  if (detId.subdetId() == CTPPSDetId::sdTrackingStrip)
+  {
+    TotemRPDetId stDetId(id);
+    printf("strip %u (%3u.%u)", id, 100*stDetId.arm() + 10*stDetId.station() + stDetId.rp(), stDetId.plane());
+  }
+
+  if (detId.subdetId() == CTPPSDetId::sdTimingDiamond)
+  {
+    CTPPSDiamondDetId diDetId(id);
+    printf("dimnd %u (%3u.%u)", id, 100*diDetId.arm() + 10*diDetId.station() + diDetId.rp(), diDetId.plane());
+  }
+
+  if (detId.subdetId() == CTPPSDetId::sdTrackingPixel)
+  {
+    CTPPSPixelDetId piDetId(id);
+    printf("pixel %u (%3u.%u)", id, 100*piDetId.arm() + 10*piDetId.station() + piDetId.rp(), piDetId.plane());
+  }
+}
+
+//----------------------------------------------------------------------------------------------------
 
 void Print(TMatrixD& m, const char *label, bool mathematicaFormat)
 {

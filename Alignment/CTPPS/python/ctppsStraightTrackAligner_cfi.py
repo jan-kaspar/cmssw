@@ -16,8 +16,8 @@ ctppsStraightTrackAligner = cms.EDAnalyzer("CTPPSStraightTrackAligner",
     # list of planes to be excluded from processing
     excludePlanes = cms.vuint32(),
 
-    # maximum number of events to process
-    maxEvents = cms.uint32(0),  # 0 means unlimited
+    # maximum number of selected events
+    maxEvents = cms.int32(-1),  # -1 means unlimited
 
 
     # ---------- event selection ----------

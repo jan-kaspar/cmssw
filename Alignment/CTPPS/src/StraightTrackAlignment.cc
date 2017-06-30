@@ -19,6 +19,7 @@
 #include "Alignment/CTPPS/interface/IdealResult.h"
 #include "Alignment/CTPPS/interface/JanAlignmentAlgorithm.h"
 #include "Alignment/CTPPS/interface/StraightTrackAlignment.h"
+#include "Alignment/CTPPS/interface/utilities.h"
 
 #include <set>
 #include <unordered_set>
@@ -108,7 +109,7 @@ StraightTrackAlignment::StraightTrackAlignment(const ParameterSet& ps) :
   excludePlanes(ps.getParameter< vector<unsigned int> >("excludePlanes")),
   z0(ps.getParameter<double>("z0")),
 
-  maxEvents(ps.getParameter<unsigned int>("maxEvents")),
+  maxEvents(ps.getParameter<signed int>("maxEvents")),
 
   removeImpossible(ps.getParameter<bool>("removeImpossible")),
   requireNumberOfUnits(ps.getParameter<unsigned int>("requireNumberOfUnits")),
@@ -288,11 +289,21 @@ void StraightTrackAlignment::Begin(const EventSetup &es)
   // print geometry info
   if (verbosity > 1)
   {
-    printf("> alignment geometry\n\t[matrix index/RP matrix index]\n");
-    for (AlignmentGeometry::iterator it = task.geometry.begin(); it != task.geometry.end(); ++it)
-      printf("%4u [%2u/%u] z = %+10.4f mm │ readout dir. %+.3f, %+.3f │ shift x = %+.3f mm, y = %+.3f mm, r = %+.3f mm │ %s-det\n",
-          it->first, it->second.matrixIndex, it->second.rpMatrixIndex, it->second.z, it->second.dx,
-          it->second.dy, it->second.sx, it->second.sy, it->second.s, (it->second.isU) ? "U" : "V");
+    for (AlignmentGeometry::iterator it = task.geometry.begin(); it != task.geometry.end(); ++it) 
+    {
+      PrintId(it->first);
+
+      printf(" [%2u] z = %+10.4f mm │ shift: x = %+7.3f mm, y = %+7.3f mm │ dir1: %+.3f, %+.3f │ dir2: %+.3f, %+.3f │",
+          it->second.matrixIndex, it->second.z,
+          it->second.sx, it->second.sy,
+          it->second.d1x, it->second.d1y,
+          it->second.d2x, it->second.d2y);
+
+      if (CTPPSDetId(it->first).subdetId() == CTPPSDetId::sdTrackingStrip)
+        printf(" %s", (it->second.isU) ? "U-det" : "V-det");
+
+      printf("\n");
+    }
   }
   
   // save task (including geometry) and fitter
@@ -532,10 +543,10 @@ void StraightTrackAlignment::UpdateDiagnosticHistograms(const HitCollection &sel
     DetGeometry &d = dit->second;
 
     // TODO
-    double m = hitCollectionIterator->pos1 + d.s;
+    double m = hitCollectionIterator->pos1 + d.s2;
     double x = trackFit.ax * d.z + trackFit.bx;
     double y = trackFit.ay * d.z + trackFit.by;
-    double f = x*d.dx + y*d.dy;
+    double f = x*d.d2x + y*d.d2y;
     double R = m - f;
 
     map<unsigned int, ResiduaHistogramSet>::iterator it = residuaHistograms.find(id);
@@ -615,9 +626,9 @@ void StraightTrackAlignment::Finish()
   {
     printf("----------------------------------------------------------------------------------------------------\n");
     printf("\n>> StraightTrackAlignment::Finish\n");
-    printf("\tevents total = %lu\n", eventsTotal);
-    printf("\tevents fitted = %lu\n", eventsFitted);
-    printf("\tevents selected = %lu\n", eventsSelected);
+    printf("\tevents total = %i\n", eventsTotal);
+    printf("\tevents fitted = %i\n", eventsFitted);
+    printf("\tevents selected = %i\n", eventsSelected);
     printf("\n%30s  %10s%10s\n", "set of RPs", "fitted", "selected");
     for (map< set<unsigned int>, unsigned long >::iterator it = fittedTracksPerRPSet.begin();
         it != fittedTracksPerRPSet.end(); ++it)

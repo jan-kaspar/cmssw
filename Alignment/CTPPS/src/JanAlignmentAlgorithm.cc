@@ -10,8 +10,8 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
 #include "Alignment/CTPPS/interface/JanAlignmentAlgorithm.h"
-#include "Alignment/CTPPS/interface/MatrixTools.h"
 #include "Alignment/CTPPS/interface/AlignmentTask.h"
+#include "Alignment/CTPPS/interface/utilities.h"
 
 #include "TMatrixDSymEigen.h"
 #include "TDecompSVD.h"
@@ -147,18 +147,19 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
   
     DetGeometry &d = git->second;
 
-    A(j, 0) = d.z * d.dx;
-    A(j, 1) = d.dx;
-    A(j, 2) = d.z * d.dy;
-    A(j, 3) = d.dy;
+    // TODO
+    A(j, 0) = d.z * d.d2x;
+    A(j, 1) = d.d2x;
+    A(j, 2) = d.z * d.d2y;
+    A(j, 3) = d.d2y;
 
     // TODO
-    m(j) = it->pos1 + d.s;  // in mm
+    m(j) = it->pos1 + d.s2;  // in mm
 
     // TODO
     Vi(j, j) = 1. / it->sig1 / it->sig1;
 
-    double C = d.dx, S = d.dy;
+    double C = d.d2x, S = d.d2y;
     
     double hx = hax * d.z + hbx;        // in mm
     double hy = hay * d.z + hby;
@@ -180,8 +181,9 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
           Ga[i][j][d.matrixIndex] = -1.; break;
         case AlignmentTask::qcShZ:
           Ga[i][j][d.matrixIndex] = hax*C + hay*S; break;
-        case AlignmentTask::qcRPShZ:
-          Ga[i][j][d.rpMatrixIndex] = hax*C + hay*S; break;
+        case AlignmentTask::qcRPShZ:  // TODO: remove this option
+          //Ga[i][j][d.rpMatrixIndex] = hax*C + hay*S;
+          break;
         case AlignmentTask::qcRotZ:
           Ga[i][j][d.matrixIndex] = (hax*d.z + hbx - d.sx)*(-S) + (hay*d.z + hby - d.sy)*C; break;
       }
@@ -623,7 +625,7 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
     RPAlignmentCorrectionData r;
 
     for (unsigned int i = 0; i < task->quantityClasses.size(); i++) {
-      unsigned idx = (task->quantityClasses[i] != AlignmentTask::qcRPShZ) ? dit->second.matrixIndex : dit->second.rpMatrixIndex;
+      unsigned idx = dit->second.matrixIndex;
       unsigned int fi = offsets[i] + idx;
       double v = AL[fi];
       double e = sqrt(EM[fi][fi]);
