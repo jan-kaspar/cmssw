@@ -16,7 +16,6 @@
 AlignmentAlgorithm::AlignmentAlgorithm(const edm::ParameterSet& ps, AlignmentTask *_t) :
   verbosity(ps.getUntrackedParameter<unsigned int>("verbosity", 0)),
   task(_t),
-  singularLimit(ps.getParameter<double>("singularLimit")),
-  useExternalFitter(ps.getParameter<bool>("useExternalFitter"))
+  singularLimit(ps.getParameter<double>("singularLimit"))
 {
 }

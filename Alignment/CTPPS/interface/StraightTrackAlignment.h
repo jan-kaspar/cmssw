@@ -81,12 +81,6 @@ class StraightTrackAlignment
     /// the collection of the alignment algorithms
     std::vector<AlignmentAlgorithm *> algorithms;
     
-    /// whether track fit shall be retrieved from an external source
-    bool useExternalFitter;
-
-    /// selection of track fit input
-    edm::InputTag tagExternalFit;
-
     /// ctDynamic not yet implemented
     enum ConstraintsType { ctHomogeneous, ctFixedDetectors, ctDynamic, ctFinal };
     

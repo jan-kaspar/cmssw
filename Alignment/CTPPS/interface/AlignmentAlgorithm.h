@@ -44,10 +44,6 @@ class AlignmentAlgorithm
     /// eigenvalues in (-singularLimit, singularLimit) are treated as singular
     double singularLimit;
 
-    /// whether to use external fit for Gamma matrices calculation
-    /// meant mainly for debugging with simulations
-    bool useExternalFitter;
-
   public:
     /// dummy constructor (not to be used)
     AlignmentAlgorithm() {}
@@ -67,7 +63,7 @@ class AlignmentAlgorithm
     virtual void Begin(const edm::EventSetup&) = 0;
 
     /// process one track
-    virtual void Feed(const HitCollection&, const LocalTrackFit&, const LocalTrackFit&) = 0;
+    virtual void Feed(const HitCollection&, const LocalTrackFit&) = 0;
 
     /// saves diagnostic histograms/plots
     virtual void SaveDiagnostics(TDirectory *) = 0;

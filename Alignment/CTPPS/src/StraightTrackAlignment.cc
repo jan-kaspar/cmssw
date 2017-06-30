@@ -109,9 +109,6 @@ StraightTrackAlignment::StraightTrackAlignment(const ParameterSet& ps) :
   excludePlanes(ps.getParameter< vector<unsigned int> >("excludePlanes")),
   z0(ps.getParameter<double>("z0")),
 
-  useExternalFitter(ps.getParameter<bool>("useExternalFitter")),
-  tagExternalFit(ps.getParameter<edm::InputTag>("tagExternalFit")),
-
   maxEvents(ps.getParameter<unsigned int>("maxEvents")),
 
   removeImpossible(ps.getParameter<bool>("removeImpossible")),
@@ -361,14 +358,6 @@ void StraightTrackAlignment::ProcessEvent(const Event& event, const EventSetup&)
   if (! fitter.Fit(selection, task.geometry, trackFit))
      return;
 
-  LocalTrackFit extTrackFit;
-  if (useExternalFitter)
-  {
-    Handle< LocalTrackFit > hTrackFit;
-    event.getByLabel(tagExternalFit, hTrackFit);
-    extTrackFit = *hTrackFit;
-  }
-  
   set<unsigned int> selectedRPs;
   for (const auto &hit : selection)
     selectedRPs.insert(hit.id/10);
@@ -441,12 +430,12 @@ void StraightTrackAlignment::ProcessEvent(const Event& event, const EventSetup&)
   // -------------------- STEP 4: FEED ALGORITHMS
 
   for (vector<AlignmentAlgorithm *>::iterator it = algorithms.begin(); it != algorithms.end(); ++it)
-    (*it)->Feed(selection, trackFit, extTrackFit);
+    (*it)->Feed(selection, trackFit);
 
   // -------------------- STEP 5: ENOUGH TRACKS?
 
   if (eventsSelected == maxEvents)
-      throw "Number of tracks processed reached maximum";
+      throw "StraightTrackAlignment: Number of tracks processed reached maximum";
 #endif
 }
 

@@ -50,7 +50,7 @@ class IdealResult : public AlignmentAlgorithm
 
     virtual void Begin(const edm::EventSetup&) override;
 
-    virtual void Feed(const HitCollection&, const LocalTrackFit&, const LocalTrackFit&) override {}
+    virtual void Feed(const HitCollection&, const LocalTrackFit&) override {}
 
     virtual void SaveDiagnostics(TDirectory *) override {}
 

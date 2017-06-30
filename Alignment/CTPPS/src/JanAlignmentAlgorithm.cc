@@ -101,8 +101,7 @@ void JanAlignmentAlgorithm::Begin(const edm::EventSetup&)
 
 //----------------------------------------------------------------------------------------------------
 
-void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrackFit &trackFit,
-  const LocalTrackFit &extTrackFit)
+void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrackFit &trackFit)
 {
   if (verbosity > 9)
     printf("\n>> JanAlignmentAlgorithm::Feed\n");
@@ -113,18 +112,7 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
   double hax = trackFit.ax;
   double hay = trackFit.ay;
   double hbx = trackFit.bx + trackFit.ax * (task->geometry.z0 - trackFit.z0);
-  double hby = trackFit.by + trackFit.ay * (task->geometry.z0 - trackFit.z0);
-
-  // track parameters for Gamma coefficient calculations
-  // either hat values or external fit
-  double cax = hax, cbx=hbx, cay=hay, cby=hby; 
-  if (useExternalFitter)
-  {
-    cax = extTrackFit.ax;
-    cay = extTrackFit.ay;
-    cbx = extTrackFit.bx + extTrackFit.ax * (task->geometry.z0 - extTrackFit.z0);
-    cby = extTrackFit.by + extTrackFit.ay * (task->geometry.z0 - extTrackFit.z0);
-  }
+  double hby = trackFit.by + trackFit.ay * (task->geometry.z0 - trackFit.z0); 
 
   // prepare Gamma matrices
   TMatrixD *Ga = new TMatrixD[task->quantityClasses.size()];
@@ -189,11 +177,11 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
         case AlignmentTask::qcShR:
           Ga[i][j][d.matrixIndex] = -1.; break;
         case AlignmentTask::qcShZ:
-          Ga[i][j][d.matrixIndex] = cax*C + cay*S; break;
+          Ga[i][j][d.matrixIndex] = hax*C + hay*S; break;
         case AlignmentTask::qcRPShZ:
-          Ga[i][j][d.rpMatrixIndex] = cax*C + cay*S; break;
+          Ga[i][j][d.rpMatrixIndex] = hax*C + hay*S; break;
         case AlignmentTask::qcRotZ:
-          Ga[i][j][d.matrixIndex] = (cax*d.z + cbx - d.sx)*(-S) + (cay*d.z + cby - d.sy)*C; break;
+          Ga[i][j][d.matrixIndex] = (hax*d.z + hbx - d.sx)*(-S) + (hay*d.z + hby - d.sy)*C; break;
       }
 
       if (buildDiagnosticPlots)
