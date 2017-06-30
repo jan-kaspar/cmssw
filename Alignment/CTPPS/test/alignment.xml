@@ -1,0 +1,14 @@
+<!--
+Shifts in um, rotations in mrad.
+
+For more details see RPAlignmentCorrections::LoadXMLFile in
+TotemAlignment/RPDataFormats/src/RPAlignmentCorrectionsSequence.cc
+-->
+
+<xml DocumentType="AlignmentDescription">
+	<det id="2007793664" sh_x="100" sh_y="200" />
+
+	<det id="2023227392" sh_x="-200" sh_y="100" />
+
+	<det id="2054160384" sh_x="-100" sh_y="-300" />
+</xml>

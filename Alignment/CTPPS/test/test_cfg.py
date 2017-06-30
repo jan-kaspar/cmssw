@@ -1,0 +1,60 @@
+import FWCore.ParameterSet.Config as cms
+
+process = cms.Process("FastAlignmentSimulation")
+
+# minimum of logs
+process.MessageLogger = cms.Service("MessageLogger",
+  statistics = cms.untracked.vstring(),
+  destinations = cms.untracked.vstring('cout'),
+  cout = cms.untracked.PSet(
+    threshold = cms.untracked.string('WARNING')
+  )
+)
+
+# set number of events
+process.source = cms.Source("EmptySource")
+
+process.maxEvents = cms.untracked.PSet(
+    input = cms.untracked.int32(10)
+)
+
+# random seeds
+
+process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService",
+  ctppsFastLocalSimulation = cms.PSet(
+    initialSeed = cms.untracked.uint32(81)
+  )
+)
+
+# base geometry
+process.load("geometry_CTPPS_alaTotem_RECO_cfi")
+
+# misalignments
+process.load("Geometry.VeryForwardGeometryBuilder.TotemRPIncludeAlignments_cfi")
+process.TotemRPIncludeAlignments.MisalignedFiles = cms.vstring("./alignment.xml")
+
+# geometry printer
+process.geomInfo = cms.EDAnalyzer("GeometryInfoModule",
+  geometryType = cms.untracked.string("misaligned"),
+  printRPInfo = cms.untracked.bool(True),
+  printSensorInfo = cms.untracked.bool(True),
+  printMeanSensorInfo = cms.untracked.bool(False)
+)
+
+# station simulation
+process.load("Alignment.CTPPS.ctppsFastLocalSimulation_cfi")
+process.ctppsFastLocalSimulation.verbosity = 10
+
+# alignment
+process.load("Alignment.CTPPS.ctppsStraightTrackAligner_cfi")
+process.ctppsStraightTrackAligner.verbosity = 10
+process.ctppsStraightTrackAligner.rpIds = cms.vuint32(103, 123)
+process.ctppsStraightTrackAligner.algorithms = cms.vstring()
+
+process.eca = cms.EDAnalyzer("EventContentAnalyzer")
+
+process.p = cms.Path(
+    process.geomInfo
+    * process.ctppsFastLocalSimulation
+    * process.ctppsStraightTrackAligner
+)
