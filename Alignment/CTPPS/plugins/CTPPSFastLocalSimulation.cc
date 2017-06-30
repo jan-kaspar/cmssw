@@ -32,6 +32,8 @@
 #include "Geometry/Records/interface/VeryForwardMisalignedGeometryRecord.h"
 
 #include "TMath.h"
+#include "TMatrixD.h"
+#include "TVectorD.h"
 
 /**
  *\brief Fast (no G4) proton simulation in within one station.
@@ -49,7 +51,7 @@ class CTPPSFastLocalSimulation : public edm::EDProducer
 
     /// whether a HepMC description of the proton shall be saved in the event
     bool makeHepMC;
-    
+
     /// whether the hits of the proton shall be calculated and saved
     bool makeHits;
 
@@ -70,13 +72,13 @@ class CTPPSFastLocalSimulation : public edm::EDProducer
 
     /// in mm
     double pitchStrips, pitchDiamonds, pitchPixels;
-    
+
     /// size of insensitive margin at sensor's edge facing the beam, in mm
     double insensitiveMarginStrips;
-  
+
     struct Distribution
     {
-      enum Type { dtBox, dtGauss, dtGaussLimit, dtExpt } type;
+      enum Type { dtBox, dtGauss, dtGaussLimit } type;
       double x_mean, x_width, x_min, x_max;
       double y_mean, y_width, y_min, y_max;
 
@@ -171,10 +173,8 @@ CTPPSFastLocalSimulation::Distribution::Distribution(const edm::ParameterSet &ps
       type = dtGauss;
     else if (!typeName.compare("gauss-limit"))
         type = dtGaussLimit;
-      else if (!typeName.compare("expt"))
-          type = dtExpt;
-        else
-          throw cms::Exception("CTPPSFastLocalSimulation") << "Unknown distribution type `" << typeName << "'.";
+      else
+        throw cms::Exception("CTPPSFastLocalSimulation") << "Unknown distribution type `" << typeName << "'.";
 
   x_mean = ps.getParameter<double>("x_mean");
   x_width = ps.getParameter<double>("x_width");
@@ -224,20 +224,15 @@ void CTPPSFastLocalSimulation::Distribution::Generate(CLHEP::HepRandomEngine &rn
         double cdf_x_min = (1. + TMath::Erf((x_min - x_mean) / x_width / sqrt(2.))) / 2.;
         double cdf_x_max = (1. + TMath::Erf((x_max - x_mean) / x_width / sqrt(2.))) / 2.;
         double a_x = cdf_x_max - cdf_x_min, b_x = cdf_x_min;
-  
+
         double cdf_y_min = (1. + TMath::Erf((y_min - y_mean) / y_width / sqrt(2.))) / 2.;
         double cdf_y_max = (1. + TMath::Erf((y_max - y_mean) / y_width / sqrt(2.))) / 2.;
         double a_y = cdf_y_max - cdf_y_min, b_y = cdf_y_min;
-  
+
         x = x_mean + x_width * sqrt(2.) * TMath::ErfInverse(2.*(a_x * u_x + b_x) - 1.); 
         y = y_mean + y_width * sqrt(2.) * TMath::ErfInverse(2.*(a_y * u_y + b_y) - 1.); 
       }
 
-      break;
-
-    case dtExpt:
-      // TODO
-      x = y = 0.;
       break;
 
     default:
@@ -281,7 +276,7 @@ void CTPPSFastLocalSimulation::GenerateTrack(unsigned int idx, CLHEP::HepRandomE
       // get RP decimal id
       CTPPSDetId detId(it->first);
       unsigned int decRPId = detId.arm()*100 + detId.station()*10 + detId.rp();
-      
+
       // stop if the RP is not selected
       if (find(RPs.begin(), RPs.end(), decRPId) == RPs.end())
         continue;
@@ -294,28 +289,55 @@ void CTPPSFastLocalSimulation::GenerateTrack(unsigned int idx, CLHEP::HepRandomE
           continue;
       }
 
-      // get geometry of the sensor
-      const DetGeomDesc *g = geometry->GetDetector(detId);
+      if (verbosity > 5)
+      {
+        if (detId.subdetId() == CTPPSDetId::sdTrackingStrip)
+          cout << endl << "        strip " << it->first << ": " << TotemRPDetId(it->first) << endl;
+
+        if (detId.subdetId() == CTPPSDetId::sdTimingDiamond)
+          cout << endl << "        diamond " << it->first << ": " << CTPPSDiamondDetId(it->first) << endl;
+
+        if (detId.subdetId() == CTPPSDetId::sdTrackingPixel)
+          cout << endl << "        pixel " << it->first << ": " << CTPPSPixelDetId(it->first) << endl;
+      }
 
       // determine the track impact point (in global coordinates)
-      // TODO: this is only correct for sensors perpendicular to the beam
-      double z = g->translation().z();
-      double x = bx + ax * (z - z0);
-      double y = by + ay * (z - z0);
-      Hep3Vector h_glo(x, y, z);
+      // !! this assumes that local axes (1, 0, 0) and (0, 1, 0) describe the sensor surface
+      Hep3Vector gl_o = geometry->LocalToGlobal(detId, Hep3Vector(0, 0, 0));
+      Hep3Vector gl_a1 = geometry->LocalToGlobal(detId, Hep3Vector(1, 0, 0)) - gl_o;
+      Hep3Vector gl_a2 = geometry->LocalToGlobal(detId, Hep3Vector(0, 1, 0)) - gl_o;
+
+      TMatrixD A(3, 3);
+      TVectorD B(3);
+      A(0, 0) = ax; A(0, 1) = -gl_a1.x(); A(0, 2) = -gl_a2.x(); B(0) = gl_o.x() - bx;
+      A(1, 0) = ay; A(1, 1) = -gl_a1.y(); A(1, 2) = -gl_a2.y(); B(1) = gl_o.y() - by;
+      A(2, 0) = 1.; A(2, 1) = -gl_a1.z(); A(2, 2) = -gl_a2.z(); B(2) = gl_o.z() - z0;
+      TMatrixD Ai(3, 3);
+      Ai = A.Invert();
+      TVectorD P(3);
+      P = Ai * B;
+      //printf("            de z = %f, p1 = %f, p2 = %f\n", P(0), P(1), P(2));
+
+      double de_z = P(0);
+      Hep3Vector h_glo(ax * de_z + bx, ay * de_z + by, de_z + z0);
+      h_glo.setX(ax * de_z + bx);
+      h_glo.setY(ay * de_z + by);
+      h_glo.setZ(de_z + z0);
+      //printf("            h_glo: x = %f, y = %f, z = %f\n", h_glo.x(), h_glo.y(), h_glo.z());
 
       // hit in local coordinates
       Hep3Vector h_loc = geometry->GlobalToLocal(detId, h_glo);
+      //printf("            h_loc: c1 = %f, c2 = %f, c3 = %f\n", h_loc.x(), h_loc.y(), h_loc.z());
 
       // strips
       if (detId.subdetId() == CTPPSDetId::sdTrackingStrip)
       {
         double u = h_loc.x();
         double v = h_loc.y();
-  
+
         if (verbosity > 5)
-          printf("        strip %4u: u=%+8.4f, v=%+8.4f, x=%+8.4f, y=%+8.4f, z=%+11.3f", detId.rawId(), u, v, x, y, z);
-  
+          printf("            u=%+8.4f, v=%+8.4f", u, v);
+
         // is it within detector?
         if (!RPTopology::IsHit(u, v, insensitiveMarginStrips))
         {
@@ -329,7 +351,7 @@ void CTPPSFastLocalSimulation::GenerateTrack(unsigned int idx, CLHEP::HepRandomE
         {
           double m = stripZeroPosition - v;
           signed int strip = (int) floor(m / pitchStrips + 0.5);
-  
+
           v = stripZeroPosition - pitchStrips * strip;
 
           if (verbosity > 5)
@@ -337,10 +359,10 @@ void CTPPSFastLocalSimulation::GenerateTrack(unsigned int idx, CLHEP::HepRandomE
         }
 
         double sigma = pitchStrips / sqrt(12.);
-  
+
         if (verbosity > 5)
           printf(" | m=%+8.4f, sigma=%+8.4f\n", v, sigma);
-  
+
         DetSet<TotemRPRecHit> &hits = stripHitColl->find_or_insert(detId);
         hits.push_back(TotemRPRecHit(v, sigma));
       }
@@ -353,10 +375,11 @@ void CTPPSFastLocalSimulation::GenerateTrack(unsigned int idx, CLHEP::HepRandomE
           h_loc.setX( pitchDiamonds * floor(h_loc.x()/pitchDiamonds + 0.5) );
         }
 
-        printf("        diamond %u: loc x = %.3f, loc y = %.3f, loc z = %.3f\n", detId.rawId(), h_loc.x(), h_loc.y(), h_loc.z());
+        if (verbosity > 5)
+          printf("            m = %.3f\n", h_loc.x());
 
         const double width = pitchDiamonds;
-        
+
         DetSet<CTPPSDiamondRecHit> &hits = diamondHitColl->find_or_insert(detId);
         hits.push_back(CTPPSDiamondRecHit(h_loc.x(), width, 0., 0., 0., 0., 0, 0, false));
       }
@@ -371,7 +394,7 @@ void CTPPSFastLocalSimulation::GenerateTrack(unsigned int idx, CLHEP::HepRandomE
         }
 
         if (verbosity > 5)
-          printf("        pixel %u: loc x = %.3f, loc y = %.3f, loc z = %.3f\n", detId.rawId(), h_loc.x(), h_loc.y(), h_loc.z());
+          printf("            m1 = %.3f, m2 = %.3f\n", h_loc.x(), h_loc.y());
 
         const double sigma = pitchPixels / sqrt(12.);
 
