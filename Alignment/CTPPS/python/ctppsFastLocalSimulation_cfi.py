@@ -15,7 +15,7 @@ ctppsFastLocalSimulation = cms.EDProducer("CTPPSFastLocalSimulation",
 
     position_distribution = cms.PSet(
       type = cms.string("box"),
-      x_mean = cms.double(60.0),       #in mm
+      x_mean = cms.double(18.0),       #in mm
       x_width = cms.double(30.0),
       x_min = cms.double(0.0),
       x_max = cms.double(0.0),

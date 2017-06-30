@@ -131,7 +131,7 @@ StraightTrackAlignment::StraightTrackAlignment(const ParameterSet& ps) :
   taskDataFile(NULL),
 
   task(ps),
-  //fitter(ps),
+  fitter(ps),
 
   buildDiagnosticPlots(ps.getParameter<bool>("buildDiagnosticPlots")),
   diagnosticsFile(ps.getParameter<string>("diagnosticsFile")),
@@ -310,7 +310,7 @@ void StraightTrackAlignment::Begin(const EventSetup &es)
   if (taskDataFile)
   {
     taskDataFile->WriteObject(&task, "task");
-    //taskDataFile->WriteObject(&fitter, "fitter");  
+    taskDataFile->WriteObject(&fitter, "fitter");
   }
 
   // initiate the algorithms
@@ -386,21 +386,22 @@ void StraightTrackAlignment::ProcessEvent(const DetSetVector<TotemRPRecHit> &hit
   if (hitSelection.empty())
     return;
 
-// TODO
-#if 0 
   // -------------------- STEP 2: fit + outlier rejection
 
   LocalTrackFit trackFit;
-  if (! fitter.Fit(selection, task.geometry, trackFit))
+  if (! fitter.Fit(hitSelection, task.geometry, trackFit))
      return;
 
   set<unsigned int> selectedRPs;
-  for (const auto &hit : selection)
-    selectedRPs.insert(hit.id/10);
+  for (const auto &hit : hitSelection)
+  {
+    CTPPSDetId detId(hit.id);
+    const unsigned int decRPId = detId.arm()*100 + detId.station()*10 + detId.rp();
+    selectedRPs.insert(decRPId);
+  }
 
   eventsFitted++;
   fittedTracksPerRPSet[selectedRPs]++;
-#endif
 
   // -------------------- STEP 3: quality checks
 

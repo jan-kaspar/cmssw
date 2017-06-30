@@ -44,11 +44,14 @@ process.geomInfo = cms.EDAnalyzer("GeometryInfoModule",
 # station simulation
 process.load("Alignment.CTPPS.ctppsFastLocalSimulation_cfi")
 process.ctppsFastLocalSimulation.verbosity = 10
+process.ctppsFastLocalSimulation.roundToPitch = False # TODO: eventually change to True
+process.ctppsFastLocalSimulation.z0 = 210000
 
 # alignment
 process.load("Alignment.CTPPS.ctppsStraightTrackAligner_cfi")
 process.ctppsStraightTrackAligner.verbosity = 10
-process.ctppsStraightTrackAligner.rpIds = cms.vuint32(103, 123) # TODO: add 116
+process.ctppsStraightTrackAligner.rpIds = cms.vuint32(103, 123) # TODO: eventually add 116
+process.ctppsStraightTrackAligner.z0 = process.ctppsFastLocalSimulation.z0
 process.ctppsStraightTrackAligner.algorithms = cms.vstring()
 
 process.eca = cms.EDAnalyzer("EventContentAnalyzer")

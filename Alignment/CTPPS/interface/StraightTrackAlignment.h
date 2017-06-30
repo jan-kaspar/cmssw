@@ -31,6 +31,7 @@
 #include "Alignment/CTPPS/interface/AlignmentAlgorithm.h"
 #include "Alignment/CTPPS/interface/AlignmentConstraint.h"
 #include "Alignment/CTPPS/interface/AlignmentTask.h"
+#include "Alignment/CTPPS/interface/LocalTrackFitter.h"
 
 namespace edm
 {
@@ -150,7 +151,7 @@ class StraightTrackAlignment
     AlignmentTask task;
 
     /// track fitter
-    //LocalTrackFitter fitter;
+    LocalTrackFitter fitter;
 
     /// (real geometry) alignments before this alignment iteration
     RPAlignmentCorrectionsData initialAlignments;                  
