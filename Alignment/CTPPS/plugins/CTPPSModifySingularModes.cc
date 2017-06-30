@@ -29,12 +29,12 @@
 /**
  *\brief Modifies the alignment modes unconstrained by the track-based alignment.
  **/
-class ModifySingularModes : public edm::EDAnalyzer
+class CTPPSModifySingularModes : public edm::EDAnalyzer
 {
   public:
-    ModifySingularModes(const edm::ParameterSet &ps); 
+    CTPPSModifySingularModes(const edm::ParameterSet &ps); 
 
-    ~ModifySingularModes()
+    ~CTPPSModifySingularModes()
     {
     }
 
@@ -57,15 +57,15 @@ using namespace edm;
 
 //----------------------------------------------------------------------------------------------------
 
-ModifySingularModes::ModifySingularModes(const ParameterSet &_ps) : ps(_ps)
+CTPPSModifySingularModes::CTPPSModifySingularModes(const ParameterSet &_ps) : ps(_ps)
 {
 }
 
 //----------------------------------------------------------------------------------------------------
 
-void ModifySingularModes::beginRun(edm::Run const&, edm::EventSetup const& es)
+void CTPPSModifySingularModes::beginRun(edm::Run const&, edm::EventSetup const& es)
 {
-  printf(">> ModifySingularModes::beginRun\n");
+  printf(">> CTPPSModifySingularModes::beginRun\n");
 
   // get input alignments
   RPAlignmentCorrectionsData input; // TODO: load this file: (ps.getUntrackedParameter<string>("inputFile"));
@@ -165,4 +165,4 @@ void ModifySingularModes::beginRun(edm::Run const&, edm::EventSetup const& es)
 
 //----------------------------------------------------------------------------------------------------
 
-DEFINE_FWK_MODULE(ModifySingularModes);
+DEFINE_FWK_MODULE(CTPPSModifySingularModes);

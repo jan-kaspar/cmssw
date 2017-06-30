@@ -21,11 +21,11 @@
 /**
  *\brief An EDAnalyzer that runs StraightTrackAlignment.
  **/
-class RPStraightTrackAligner : public edm::EDAnalyzer
+class CTPPSStraightTrackAligner : public edm::EDAnalyzer
 {
   public:
-    RPStraightTrackAligner(const edm::ParameterSet &ps); 
-    ~RPStraightTrackAligner() {}
+    CTPPSStraightTrackAligner(const edm::ParameterSet &ps); 
+    ~CTPPSStraightTrackAligner() {}
 
   private:
     unsigned int verbosity;
@@ -46,7 +46,7 @@ using namespace edm;
 
 //----------------------------------------------------------------------------------------------------
 
-RPStraightTrackAligner::RPStraightTrackAligner(const ParameterSet &ps) : 
+CTPPSStraightTrackAligner::CTPPSStraightTrackAligner(const ParameterSet &ps) : 
   verbosity(ps.getUntrackedParameter<unsigned int>("verbosity", 0)),
   worker_initialized(false),
   worker(ps)
@@ -55,19 +55,19 @@ RPStraightTrackAligner::RPStraightTrackAligner(const ParameterSet &ps) :
 
 //----------------------------------------------------------------------------------------------------
 
-void RPStraightTrackAligner::beginRun(edm::Run const&, edm::EventSetup const& es)
+void CTPPSStraightTrackAligner::beginRun(edm::Run const&, edm::EventSetup const& es)
 {
 }
 
 //----------------------------------------------------------------------------------------------------
 
-void RPStraightTrackAligner::analyze(const edm::Event &e, const edm::EventSetup &es)
+void CTPPSStraightTrackAligner::analyze(const edm::Event &e, const edm::EventSetup &es)
 {
   if (geometryWatcher.check(es))
   {
     if (worker_initialized)
-      throw cms::Exception("RPStraightTrackAligner") <<
-        "RPStraightTrackAligner can't cope with changing geometry - change in event " << e.id() << endl;
+      throw cms::Exception("CTPPSStraightTrackAligner") <<
+        "CTPPSStraightTrackAligner can't cope with changing geometry - change in event " << e.id() << endl;
   }
 
   if (!worker_initialized)
@@ -81,9 +81,9 @@ void RPStraightTrackAligner::analyze(const edm::Event &e, const edm::EventSetup 
 
 //----------------------------------------------------------------------------------------------------
 
-void RPStraightTrackAligner::endJob()
+void CTPPSStraightTrackAligner::endJob()
 {
   worker.Finish();
 }
 
-DEFINE_FWK_MODULE(RPStraightTrackAligner);
+DEFINE_FWK_MODULE(CTPPSStraightTrackAligner);

@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-ModifySingularModes = cms.EDAnalyzer("ModifySingularModes",
+ctppsModifySingularModes = cms.EDAnalyzer("CTPPSModifySingularModes",
     z0 = cms.untracked.double(0.0),
 
     inputFile = cms.untracked.string(""),
