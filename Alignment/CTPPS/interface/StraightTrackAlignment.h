@@ -17,6 +17,11 @@
 #include <TVectorD.h>
 #include <TFile.h>
 
+#include "DataFormats/Common/interface/DetSetVector.h"
+#include "DataFormats/CTPPSReco/interface/TotemRPRecHit.h"
+#include "DataFormats/CTPPSReco/interface/CTPPSDiamondRecHit.h"
+#include "DataFormats/CTPPSReco/interface/CTPPSPixelRecHit.h"
+
 #include "DataFormats/CTPPSAlignment/interface/RPAlignmentCorrectionData.h"
 #include "DataFormats/CTPPSAlignment/interface/RPAlignmentCorrectionsData.h"
 #include "DataFormats/CTPPSAlignment/interface/LocalTrackFit.h"
@@ -48,15 +53,14 @@ class StraightTrackAlignment
     virtual ~StraightTrackAlignment();
 
     virtual void Begin(const edm::EventSetup&);
-    virtual void ProcessEvent(const edm::Event&, const edm::EventSetup&);
+
+    virtual void ProcessEvent(const edm::DetSetVector<TotemRPRecHit> &hitsStrip, const edm::DetSetVector<CTPPSDiamondRecHit> &hitsDiamond,
+      const edm::DetSetVector<CTPPSPixelRecHit> &hitsPixel);
     
     /// performs analyses and fill results variable
     virtual void Finish();
 
   protected:
-    friend class RPStraightTrackAligner;
-    friend class StraightTrackAlignmentIdealResult;
-
     // ---------- input parameters -----------
 
     /// verbosity level
@@ -65,11 +69,8 @@ class StraightTrackAlignment
     /// verbosity level while factorization
     unsigned int factorizationVerbosity;
 
-    /// selection of input (pattern-recognition result)
-    edm::InputTag tagRecognizedPatterns;
-
     /// list of RPs for which the alignment parameters shall be optimized
-    std::vector<unsigned int> RPIds;
+    std::vector<unsigned int> rpIds;
 
     /// list of planes to be excluded from processing
     std::vector<unsigned int> excludePlanes;

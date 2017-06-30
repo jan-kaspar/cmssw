@@ -15,11 +15,18 @@ class RPRecoHit;
 
 struct Hit
 {
-  unsigned int id;    ///< detector decimal id
-  double position;    ///< position in mm
-  double sigma;       ///< uncertainty in mm
+  /// sensor id
+  unsigned int id;
 
-  Hit(unsigned int i=0, double p=0., double s=0.) : id(i), position(p), sigma(s) {}
+  /// first measurement: position and uncertainty in mm
+  double pos1, sig1;
+
+  /// second measurement: position and uncertainty in mm
+  double pos2, sig2;
+
+  Hit(unsigned int _id=0, double _p1=0., double _s1=0., double _p2=0., double _s2=0.) : id(_id), pos1(_p1), sig1(_s1), pos2(_p2), sig2(_s2)
+  {
+  }
 };
 
 typedef std::vector<Hit> HitCollection;

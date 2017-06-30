@@ -6,13 +6,12 @@ ctppsStraightTrackAligner = cms.EDAnalyzer("CTPPSStraightTrackAligner",
 
     # ---------- input and event selection ----------
 
-    # description of the track-candidate producer module
-    #   use `RPSinglTrackCandFind' for parallel finder
-    #   use `NonParallelTrackFinder' for non-parallel finder    
-    tagRecognizedPatterns = cms.InputTag('NonParallelTrackFinder'),
+    tagStripHits = cms.InputTag("ctppsFastLocalSimulation"),
+    tagDiamondHits = cms.InputTag("ctppsFastLocalSimulation"),
+    tagPixelHits = cms.InputTag("ctppsFastLocalSimulation"),
 
     # list of RPs for which the alignment parameters shall be optimized
-    RPIds = cms.vuint32(),
+    rpIds = cms.vuint32(),
 
     # list of planes to be excluded from processing
     excludePlanes = cms.vuint32(),

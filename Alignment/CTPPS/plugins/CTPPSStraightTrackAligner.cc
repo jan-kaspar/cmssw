@@ -18,6 +18,11 @@
 #include "Geometry/VeryForwardGeometryBuilder/interface/TotemRPGeometry.h"
 #include "Geometry/Records/interface/VeryForwardRealGeometryRecord.h"
 
+#include "DataFormats/Common/interface/DetSetVector.h"
+#include "DataFormats/CTPPSReco/interface/TotemRPRecHit.h"
+#include "DataFormats/CTPPSReco/interface/CTPPSDiamondRecHit.h"
+#include "DataFormats/CTPPSReco/interface/CTPPSPixelRecHit.h"
+
 /**
  *\brief An EDAnalyzer that runs StraightTrackAlignment.
  **/
@@ -30,15 +35,22 @@ class CTPPSStraightTrackAligner : public edm::EDAnalyzer
   private:
     unsigned int verbosity;
 
+    edm::EDGetTokenT<edm::DetSetVector<TotemRPRecHit>> tokenStripHits;
+    edm::EDGetTokenT<edm::DetSetVector<CTPPSDiamondRecHit>> tokenDiamondHits;
+    edm::EDGetTokenT<edm::DetSetVector<CTPPSPixelRecHit>> tokenPixelHits;
+
     bool worker_initialized;
     StraightTrackAlignment worker;
 
     edm::ESWatcher<VeryForwardRealGeometryRecord> geometryWatcher;
 
-    virtual void beginJob() {}
-    virtual void beginRun(edm::Run const&, edm::EventSetup const&);
-    virtual void analyze(const edm::Event &e, const edm::EventSetup &es);
-    virtual void endJob();
+    virtual void beginJob() override {}
+
+    virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
+
+    virtual void analyze(const edm::Event &e, const edm::EventSetup &es) override;
+
+    virtual void endJob() override;
 };
 
 using namespace std;
@@ -48,6 +60,11 @@ using namespace edm;
 
 CTPPSStraightTrackAligner::CTPPSStraightTrackAligner(const ParameterSet &ps) : 
   verbosity(ps.getUntrackedParameter<unsigned int>("verbosity", 0)),
+
+  tokenStripHits(consumes<DetSetVector<TotemRPRecHit>>(ps.getParameter<edm::InputTag>("tagStripHits"))),
+  tokenDiamondHits(consumes<DetSetVector<CTPPSDiamondRecHit>>(ps.getParameter<edm::InputTag>("tagDiamondHits"))),
+  tokenPixelHits(consumes<DetSetVector<CTPPSPixelRecHit>>(ps.getParameter<edm::InputTag>("tagPixelHits"))),
+
   worker_initialized(false),
   worker(ps)
 {
@@ -61,22 +78,35 @@ void CTPPSStraightTrackAligner::beginRun(edm::Run const&, edm::EventSetup const&
 
 //----------------------------------------------------------------------------------------------------
 
-void CTPPSStraightTrackAligner::analyze(const edm::Event &e, const edm::EventSetup &es)
+void CTPPSStraightTrackAligner::analyze(const edm::Event &event, const edm::EventSetup &es)
 {
+  // check if geometry hasn't changed
   if (geometryWatcher.check(es))
   {
     if (worker_initialized)
       throw cms::Exception("CTPPSStraightTrackAligner") <<
-        "CTPPSStraightTrackAligner can't cope with changing geometry - change in event " << e.id() << endl;
+        "CTPPSStraightTrackAligner can't cope with changing geometry - change in event " << event.id() << endl;
   }
 
+  // check if worker already initialised
   if (!worker_initialized)
   {
     worker.Begin(es);
     worker_initialized = true;
   }
 
-  worker.ProcessEvent(e, es);
+  // get input
+  Handle<DetSetVector<TotemRPRecHit>> inputStripHits;
+  event.getByToken(tokenStripHits, inputStripHits);
+
+  Handle<DetSetVector<CTPPSDiamondRecHit>> inputDiamondHits;
+  event.getByToken(tokenDiamondHits, inputDiamondHits);
+
+  Handle<DetSetVector<CTPPSPixelRecHit>> inputPixelHits;
+  event.getByToken(tokenPixelHits, inputPixelHits);
+
+  // feed worker
+  worker.ProcessEvent(*inputStripHits, *inputDiamondHits, *inputPixelHits);
 }
 
 //----------------------------------------------------------------------------------------------------

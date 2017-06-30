@@ -55,17 +55,9 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
   printf(">> IdealResult::Solve\n\tvalues in mm and rad\n");
   result.Clear();
 
-#if 0
-  // extract full correction vector
-  TVectorD *Fc = new TVectorD[task->quantityClasses.size()];
-  unsigned int dim = 0;
-  for (unsigned int i = 0; i < task->quantityClasses.size(); i++) {
-    Fc[i].ResizeTo((task->quantityClasses[i] == AlignmentTask::qcRPShZ) ? task->geometry.RPs() : task->geometry.Detectors());
-    Fc[i].Zero();
-    dim += Fc[i].GetNrows();
-  }
-#endif
+  printf("dupa 1\n");
 
+  // collect true misalignments
   const unsigned int D = task->geometry.Detectors();
   const unsigned int R = task->geometry.RPs();
   TVectorD F_ShX(D);
@@ -79,8 +71,6 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
 
   TVectorD da_x(D);
   TVectorD da_y(D);
-
-  // collect true misalignments
   for (AlignmentGeometry::const_iterator dit = task->geometry.begin(); dit != task->geometry.end(); ++dit)
   {
       unsigned int rawId = dit->first;
@@ -123,33 +113,15 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
       da_y[mi] = da.y();
       // TODO: check z component - it shall be 0
 
-#if 0
-      // fill the vectors
-      for (unsigned int i = 0; i < task->quantityClasses.size(); i++) {
-        switch (task->quantityClasses[i]) {
-          case AlignmentTask::qcShR: Fc[i][dit->second.matrixIndex] = sh_r; break;
-          case AlignmentTask::qcShZ: Fc[i][dit->second.matrixIndex] = sh_z; break;
-          case AlignmentTask::qcRPShZ: Fc[i][dit->second.rpMatrixIndex] = sh_z; break; // TODO taking avarage would be more "correct" that sh_z of the last plane
-          case AlignmentTask::qcRotZ: Fc[i][dit->second.matrixIndex] = rot_z; break;
-        }
-      }
-#endif
   }
 
-#if 0
-  // build full F vector
-  TVectorD F(dim);
-  unsigned int offset = 0;
-  for (unsigned int i = 0; i < task->quantityClasses.size(); i++) {
-    F.SetSub(offset, Fc[i]);
-    offset += Fc[i].GetNrows();
-  }
-#endif
+  printf("dupa 2\n");
 
   // remove extended constraints, if desired
   // separate rotation constraints
   vector<AlignmentConstraint> con_rot, con_nrot;
-  for (unsigned int i = 0; i < constraints.size(); i++) {
+  for (unsigned int i = 0; i < constraints.size(); i++)
+  {
     if (!useExtendedConstraints && constraints[i].extended)
       continue;
 
@@ -163,7 +135,8 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
   vector<AlignmentConstraint> asModes;
   task->BuildHomogeneousConstraints(asModes);
 
-  if (asModes.size() != constraints.size()) {
+  if (asModes.size() != constraints.size())
+  {
     printf("ERROR in IdealResult::Solve > Number of constraints (%lu) is different that the number of assumed singular modes (%lu).\n",
       constraints.size(), asModes.size());
     return 1;
@@ -171,7 +144,8 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
 
   // separate rotation constraints for assumed singular modes
   vector<AlignmentConstraint> asModes_rot, asModes_nrot;
-  for (unsigned int i = 0; i < asModes.size(); i++) {
+  for (unsigned int i = 0; i < asModes.size(); i++)
+  {
     if (!useExtendedConstraints && asModes[i].extended)
       continue;
 
@@ -181,18 +155,24 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
       asModes_nrot.push_back(asModes[i]);
   }
 
+  printf("dupa 3\n");
+
   // treat rotations
   TMatrixD Cr(task->QuantitiesOfClass(AlignmentTask::qcRotZ), con_rot.size());
   TMatrixD Er(task->QuantitiesOfClass(AlignmentTask::qcRotZ), con_rot.size());
   TVectorD Vr(con_rot.size());
 
-  for (unsigned int c = 0; c < con_rot.size(); c++) {
-    for (unsigned int i = 0; i < task->QuantitiesOfClass(AlignmentTask::qcRotZ); i++) {
+  for (unsigned int c = 0; c < con_rot.size(); c++)
+  {
+    for (unsigned int i = 0; i < task->QuantitiesOfClass(AlignmentTask::qcRotZ); i++)
+    {
       Cr(i, c) = con_rot[c].coef[AlignmentTask::qcRotZ][i];
       Vr(c) = con_rot[c].val;
       Er(i, c) = asModes_rot[c].coef[AlignmentTask::qcRotZ][i];
     }
   }
+
+  printf("dupa 4\n");
 
 #ifdef DEBUG
   printf("* rotations\n");
@@ -207,12 +187,18 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
   TVectorD Fr_sol(Fr);
   TVectorD Vr_fil(con_rot.size());
 
-  if (Cr.GetNcols() > 0) {
+  if (Cr.GetNcols() > 0)
+  {
+    printf("dupa 4.1\n");
+    // TODO: here is a problem
     CrTErI.Invert();
+    printf("dupa 4.2\n");
     Vr_fil = CrTErI * CrT * Fr;
     Fr_fil -= Er * Vr_fil; 
     Fr_sol = Fr_fil + Er * CrTErI * Vr; 
   }
+
+  printf("dupa 5\n");
 
 #ifdef DEBUG
   printf("\n* constraint values:\n    constraint                       Vr_fil    Vr\n");
@@ -220,14 +206,16 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
     printf("    %2u (%25s)  %+10.2E  %+10.2E\n", i, con_rot[i].name.c_str(), Vr_fil[i], Vr[i]);
 
   printf("\n* Fr vectors (in um and mrad):\n    idx    F (full)        F_fil    F_sol        F_sol - F\n");
-  for (int i = 0; i < Fr.GetNrows(); i++) {
+  for (int i = 0; i < Fr.GetNrows(); i++)
+  {
     printf("    %2u   %+10.2f   %+10.2f   %+10.2f   %+10.2f\n", i, Fr[i]*1E3, Fr_fil[i]*1E3, Fr_sol[i]*1E3, (Fr_sol[i] - Fr[i])*1E3);
   }
 #endif
 
   // calculate (rotation corrected) shift in readout direction
   TVectorD F_ShR(D);
-  for (unsigned int i = 0; i < D; i++) {
+  for (unsigned int i = 0; i < D; i++)
+  {
     F_ShR[i] = da_x[i]*F_ShX[i] + da_y[i]*F_ShY[i];
     double drho = Fr_sol[i] - Fr[i];
     double ImC = 1. - cos(drho);
@@ -239,9 +227,12 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
     F_ShR[i] += correction;
   }
 
+  printf("dupa 6\n");
+
   // build vector of misalignments other than rotations 
   unsigned int dim = 0;
-  for (unsigned int i = 0; i < task->quantityClasses.size(); i++) {
+  for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
+  {
     if (task->quantityClasses[i] == task->qcRotZ)
       continue;
     dim += task->QuantitiesOfClass(task->quantityClasses[i]);
@@ -251,10 +242,12 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
   TVectorD Fnr(dim);
   unsigned int offset = 0;
   map<unsigned int, unsigned int> offsets;
-  for (unsigned int i = 0; i < task->quantityClasses.size(); i++) {
+  for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
+  {
     TVectorD *Fc = NULL;
 
-    switch (task->quantityClasses[i]) {
+    switch (task->quantityClasses[i])
+    {
       case AlignmentTask::qcShR: Fc = &F_ShR; break;
       case AlignmentTask::qcShZ: Fc = &F_ShZ; break;
       case AlignmentTask::qcRPShZ: Fc = &F_RPShZ; break;
@@ -269,39 +262,51 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
     offset += Fc->GetNrows();
   }
 
+  printf("dupa 7\n");
+
   // build C matrix and vector of (imposed) constraint values
   TMatrixD Cnr(dim, con_nrot.size());
   TVectorD Vnr(con_nrot.size());
-  for (unsigned int i = 0; i < con_nrot.size(); i++) {
+  for (unsigned int i = 0; i < con_nrot.size(); i++)
+  {
     offset = 0;
     Vnr[i] = con_nrot[i].val;
-    for (unsigned int j = 0; j < task->quantityClasses.size(); j++) {
+    for (unsigned int j = 0; j < task->quantityClasses.size(); j++)
+    {
       if (task->quantityClasses[j] == task->qcRotZ)
         continue;
 
       const TVectorD &cv = con_nrot[i].coef.find(task->quantityClasses[j])->second;
-      for (int k = 0; k < cv.GetNrows(); k++) {
+      for (int k = 0; k < cv.GetNrows(); k++)
+      {
         Cnr[offset][i] = cv[k];
         offset++;
       }
     }
   }
+
+  printf("dupa 8\n");
   
   // build E matrix (assumed singular vectors of S)
   TMatrixD Enr(dim, asModes_nrot.size());
-  for (unsigned int i = 0; i < asModes_nrot.size(); i++) {
+  for (unsigned int i = 0; i < asModes_nrot.size(); i++)
+  {
     offset = 0;
-    for (unsigned int j = 0; j < task->quantityClasses.size(); j++) {
+    for (unsigned int j = 0; j < task->quantityClasses.size(); j++)
+    {
       if (task->quantityClasses[j] == task->qcRotZ)
         continue;
 
       const TVectorD &hcv = asModes_nrot[i].coef.find(task->quantityClasses[j])->second;
-      for (int k = 0; k < hcv.GetNrows(); k++) {
+      for (int k = 0; k < hcv.GetNrows(); k++)
+      {
         Enr[offset][i] = hcv[k];
         offset++;
       }
     }
   }
+
+  printf("dupa 9\n");
   
 #ifdef DEBUG
   printf("* shifts\n");
@@ -316,12 +321,15 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
   TVectorD Fnr_sol(Fnr);
   TVectorD Vnr_fil(con_nrot.size());
 
-  if (Cnr.GetNcols() > 0) {
+  if (Cnr.GetNcols() > 0)
+  {
     CnrTEnrI.Invert();
     Vnr_fil = CnrTEnrI * CnrT * Fnr; // 
     Fnr_fil -= Enr * Vnr_fil;  // 
     Fnr_sol = Fnr_fil + Enr * CnrTEnrI * Vnr; 
   }
+
+  printf("dupa 10\n");
   
 #ifdef DEBUG
   printf("\n* constraint values:\n    constraint                       Vnr_fil    Vnr\n");
@@ -329,7 +337,8 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
     printf("    %2u (%25s)  %+10.2E  %+10.2E\n", i, constraints[i].name.c_str(), Vnr_fil[i], Vnr[i]);
 
   printf("\n* Fnr vectors (in um and mrad):\n    idx    F (full)        F_fil    F_sol        F_sol - F\n");
-  for (int i = 0; i < Fnr.GetNrows(); i++) {
+  for (int i = 0; i < Fnr.GetNrows(); i++)
+  {
     printf("    %2u   %+10.2f   %+10.2f   %+10.2f   %+10.2f\n", i, Fnr[i]*1E3, Fnr_fil[i]*1E3, Fnr_sol[i]*1E3, (Fnr_sol[i] - Fnr[i])*1E3);
   }
 #endif
@@ -343,7 +352,8 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
     {
       unsigned idx = (task->quantityClasses[i] != AlignmentTask::qcRPShZ) ? dit->second.matrixIndex : dit->second.rpMatrixIndex;
       const double &v = (task->quantityClasses[i] != AlignmentTask::qcRotZ) ? Fnr_sol[offsets[i] + idx] : Fr_sol[idx];
-      switch (task->quantityClasses[i]) {
+      switch (task->quantityClasses[i])
+      {
         case AlignmentTask::qcShR: r.setTranslationR(v); break;
         case AlignmentTask::qcShZ: r.setTranslationZ(v); break;
         case AlignmentTask::qcRPShZ: r.setTranslationZ(v); break;
@@ -354,50 +364,7 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
     result.SetSensorCorrection(dit->first, r);
   }
 
-#if 0
-  // save graphs
-  string graphFileName = "idealGraphs.root";
-  if (!graphFileName.empty()) {
-    TFile *f = new TFile(graphFileName.c_str(), "recreate");
-
-    TGraph** gUV = new TGraph*[offsets.size()];
-    TGraph** gU = new TGraph*[offsets.size()];
-    TGraph** gV = new TGraph*[offsets.size()];
-    for (unsigned int i = 0; i < offsets.size(); i++) {
-      const string &qcLabel  = AlignmentTask::QuantityClassTag(task->quantityClasses[i]);
-
-      char buf[50];
-      sprintf(buf, "%s_uv", qcLabel.c_str()); gUV[i] = new TGraph(); gUV[i]->SetName(buf);
-      sprintf(buf, "%s_u", qcLabel.c_str()); gU[i] = new TGraph(); gU[i]->SetName(buf);
-      sprintf(buf, "%s_v", qcLabel.c_str()); gV[i] = new TGraph(); gV[i]->SetName(buf);
-    }
-
-    for (AlignmentGeometry::const_iterator dit = task->geometry.begin(); dit != task->geometry.end(); ++dit) {
-      for (unsigned int i = 0; i < task->quantityClasses.size(); i++) {
-        unsigned idx = (task->quantityClasses[i] != AlignmentTask::qcRPShZ) ? dit->second.matrixIndex : dit->second.rpMatrixIndex;
-        unsigned int fi = offsets[i] + idx;
-        const double &v = F_sol[fi];
-        const double &z = dit->second.z;
-        gUV[i]->SetPoint(gUV[i]->GetN(), z, v);
-        if (dit->second.isU)
-          gU[i]->SetPoint(gU[i]->GetN(), z, v);
-        else
-          gV[i]->SetPoint(gV[i]->GetN(), z, v);
-      }
-    }
-
-    for (unsigned int i = 0; i < offsets.size(); i++) {
-      gUV[i]->Write();
-      gU[i]->Write();
-      gV[i]->Write();
-    }
-
-    delete f;
-    delete [] gUV;
-    delete [] gU;
-    delete [] gV;
-  }
-#endif
+  printf("dupa end\n");
 
   return 0;
 }

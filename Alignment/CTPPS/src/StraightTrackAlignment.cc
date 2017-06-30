@@ -103,9 +103,8 @@ void StraightTrackAlignment::RPSetPlots::Write() const
 StraightTrackAlignment::StraightTrackAlignment(const ParameterSet& ps) :
   verbosity(ps.getUntrackedParameter<unsigned int>("verbosity", 0)),
   factorizationVerbosity(ps.getUntrackedParameter<unsigned int>("factorizationVerbosity", 0)),
-  tagRecognizedPatterns(ps.getParameter<edm::InputTag>("tagRecognizedPatterns")),
 
-  RPIds(ps.getParameter< vector<unsigned int> >("RPIds")),
+  rpIds(ps.getParameter< vector<unsigned int> >("rpIds")),
   excludePlanes(ps.getParameter< vector<unsigned int> >("excludePlanes")),
   z0(ps.getParameter<double>("z0")),
 
@@ -284,7 +283,7 @@ void StraightTrackAlignment::Begin(const EventSetup &es)
   // prepare geometry (in fact, this should be done whenever es gets changed)
   ESHandle<TotemRPGeometry> geomH;
   es.get<VeryForwardRealGeometryRecord>().get(geomH);
-  task.BuildGeometry(RPIds, excludePlanes, geomH.product(), z0, task.geometry);  
+  task.BuildGeometry(rpIds, excludePlanes, geomH.product(), z0, task.geometry);  
 
   // print geometry info
   if (verbosity > 1)
@@ -319,39 +318,65 @@ void StraightTrackAlignment::Begin(const EventSetup &es)
 
 //----------------------------------------------------------------------------------------------------
 
-void StraightTrackAlignment::ProcessEvent(const Event& event, const EventSetup&)
+void StraightTrackAlignment::ProcessEvent(const DetSetVector<TotemRPRecHit> &hitsStrip, const DetSetVector<CTPPSDiamondRecHit> &hitsDiamond,
+      const DetSetVector<CTPPSPixelRecHit> &hitsPixel)
 {
+  eventsTotal++;
+
   if (verbosity > 9)
-    printf("\n---------- StraightTrackAlignment::ProcessEvent > event %llu\n", event.id().event());
+    printf("\n---------- StraightTrackAlignment::ProcessEvent\n");
+
+  // -------------------- STEP 1: get hits from selected RPs
+  
+  HitCollection hitSelection;
+
+  // strips
+  for (const auto &pv : hitsStrip)
+  {
+    // skip if RP not selected
+    const CTPPSDetId detId(pv.detId());
+    const unsigned int rpDecId = detId.arm()*100 + detId.station()*10 + detId.rp();
+
+    if (find(rpIds.begin(), rpIds.end(), rpDecId) == rpIds.end())
+      continue;
+
+    for (const auto &h : pv)
+      hitSelection.emplace_back(Hit(pv.detId(), h.getPosition(), h.getSigma()));
+  }
+
+  // diamonds
+  for (const auto &pv : hitsDiamond)
+  {
+    // skip if RP not selected
+    const CTPPSDetId detId(pv.detId());
+    const unsigned int rpDecId = detId.arm()*100 + detId.station()*10 + detId.rp();
+
+    if (find(rpIds.begin(), rpIds.end(), rpDecId) == rpIds.end())
+      continue;
+
+    for (const auto &h : pv)
+      hitSelection.emplace_back(Hit(pv.detId(), h.getX(), h.getXWidth() / sqrt(12.)));
+  }
+
+  // pixels
+  for (const auto &pv : hitsPixel)
+  {
+    // skip if RP not selected
+    const CTPPSDetId detId(pv.detId());
+    const unsigned int rpDecId = detId.arm()*100 + detId.station()*10 + detId.rp();
+
+    if (find(rpIds.begin(), rpIds.end(), rpDecId) == rpIds.end())
+      continue;
+
+    for (const auto &h : pv)
+      hitSelection.emplace_back(Hit(pv.detId(), h.getPoint().x(), sqrt(h.getError().xx()), h.getPoint().y(), sqrt(h.getError().yy())));
+  }
+
+  if (hitSelection.empty())
+    return;
 
 // TODO
 #if 0 
-  // -------------------- STEP 1: get hits from selected RPs
-
-  Handle< RPTrackCandidateCollection > trackColl;
-  event.getByLabel(tagRecognizedPatterns, trackColl);
-
-  HitCollection selection;
-  for (RPTrackCandidateCollection::const_iterator it = trackColl->begin(); it != trackColl->end(); ++it)
-  {
-    // skip non fittable candidates
-    if (!it->second.Fittable())
-      continue;
-
-    // skip if RP not selected by user
-    if (find(RPIds.begin(), RPIds.end(), it->first) == RPIds.end())
-      continue;
-    
-    const vector<RPRecoHit> &hits = it->second.TrackRecoHits();
-    for (unsigned int i = 0; i < hits.size(); i++)
-      selection.push_back(hits[i]);
-  }
-
-  eventsTotal++;
-
-  if (selection.empty())
-    return;
-
   // -------------------- STEP 2: fit + outlier rejection
 
   LocalTrackFit trackFit;
@@ -364,9 +389,12 @@ void StraightTrackAlignment::ProcessEvent(const Event& event, const EventSetup&)
 
   eventsFitted++;
   fittedTracksPerRPSet[selectedRPs]++;
+#endif
 
   // -------------------- STEP 3: quality checks
 
+// TODO
+#if 0
   bool top = false, bottom = false, horizontal = false;
   unordered_set<unsigned int> units;
   for (const auto &rp : selectedRPs)
@@ -426,17 +454,20 @@ void StraightTrackAlignment::ProcessEvent(const Event& event, const EventSetup&)
   
   eventsSelected++;
   selectedTracksPerRPSet[selectedRPs]++;
+#endif
   
   // -------------------- STEP 4: FEED ALGORITHMS
 
+// TODO
+#if 0
   for (vector<AlignmentAlgorithm *>::iterator it = algorithms.begin(); it != algorithms.end(); ++it)
     (*it)->Feed(selection, trackFit);
+#endif
 
   // -------------------- STEP 5: ENOUGH TRACKS?
 
   if (eventsSelected == maxEvents)
       throw "StraightTrackAlignment: Number of tracks processed reached maximum";
-#endif
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -500,7 +531,8 @@ void StraightTrackAlignment::UpdateDiagnosticHistograms(const HitCollection &sel
       continue;
     DetGeometry &d = dit->second;
 
-    double m = hitCollectionIterator->position + d.s;
+    // TODO
+    double m = hitCollectionIterator->pos1 + d.s;
     double x = trackFit.ax * d.z + trackFit.bx;
     double y = trackFit.ay * d.z + trackFit.by;
     double f = x*d.dx + y*d.dy;
@@ -642,6 +674,8 @@ void StraightTrackAlignment::Finish()
   }
 
   // print
+// TODO
+#if 0
   printf("\n>> StraightTrackAlignment::Finish > Print\n");
 
   PrintLineSeparator(results);
@@ -699,6 +733,7 @@ void StraightTrackAlignment::Finish()
   PrintAlgorithmsLine(results);
   PrintQuantitiesLine(results);
   PrintLineSeparator(results);
+#endif
 
   // save results
 // TODO
