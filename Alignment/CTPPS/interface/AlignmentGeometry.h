@@ -80,13 +80,13 @@ class AlignmentGeometry : public std::map<unsigned int, DetGeometry>
     void Insert(unsigned int id, const DetGeometry &g);
 
     /// returns the number of detectors in the collection
-    unsigned int Detectors()
+    unsigned int Detectors() const
     {
       return size();
     }
 
     /// returns the number of RPs in the collection
-    unsigned int RPs()
+    unsigned int RPs() const
     {
       return rps.size();
     }

@@ -88,10 +88,10 @@ class AlignmentTask
     std::vector<QuantityClass> quantityClasses;
 
     /// returns a string tag for the given quantity class
-    static std::string QuantityClassTag(QuantityClass);
+    std::string QuantityClassTag(QuantityClass) const;
 
     /// returns the number of quantities of the given class
-    unsigned int QuantitiesOfClass(QuantityClass);
+    unsigned int QuantitiesOfClass(QuantityClass) const;
 
     // TODO: add matrixIndex mappings and methods
 
@@ -99,7 +99,7 @@ class AlignmentTask
     // -------------------- constraint-related members --------------------
 
     /// returns the number of constraints of the given class
-    unsigned int ConstraintsForClass(QuantityClass);
+    unsigned int ConstraintsForClass(QuantityClass) const;
     
     /// builds a set of homogeneous constraints
     void BuildHomogeneousConstraints(std::vector<AlignmentConstraint>&) const;

@@ -674,21 +674,25 @@ void StraightTrackAlignment::Finish()
   }
 
   // print
-// TODO
-#if 0
   printf("\n>> StraightTrackAlignment::Finish > Print\n");
 
   PrintLineSeparator(results);
   PrintQuantitiesLine(results);
   PrintAlgorithmsLine(results);
 
+  signed int prevRPId = -1;
+
   for (AlignmentGeometry::const_iterator dit = task.geometry.begin(); dit != task.geometry.end(); ++dit)
   {
     //  ═ ║ 
-    if (dit->first % 10 == 0)
-      PrintLineSeparator(results);
 
-    printf("%4u ║", dit->first);
+    signed int rpId = CTPPSDetId(dit->first).getRPId();
+    if (rpId != prevRPId)
+      PrintLineSeparator(results);
+    prevRPId = rpId;
+
+    PrintId(dit->first);
+    printf(" ║");
 
     for (unsigned int q = 0; q < task.quantityClasses.size(); q++)
     {
@@ -709,8 +713,7 @@ void StraightTrackAlignment::Finish()
         switch (task.quantityClasses[q])
         {
           case AlignmentTask::qcShR: v = ac.sh_r();   e = ac.sh_r_e(); break;
-          case AlignmentTask::qcShZ:
-          case AlignmentTask::qcRPShZ: v = ac.sh_z(); e = ac.sh_z_e(); break;
+          case AlignmentTask::qcShZ: v = ac.sh_z(); e = ac.sh_z_e(); break;
           case AlignmentTask::qcRotZ: v = ac.rot_z(); e = ac.rot_z_e(); break;
         }
 
@@ -733,7 +736,6 @@ void StraightTrackAlignment::Finish()
   PrintAlgorithmsLine(results);
   PrintQuantitiesLine(results);
   PrintLineSeparator(results);
-#endif
 
   // save results
 // TODO
@@ -837,7 +839,7 @@ void StraightTrackAlignment::PrintN(const char *str, unsigned int N)
 
 void StraightTrackAlignment::PrintLineSeparator(const std::vector<RPAlignmentCorrectionsData> &results)
 {
-  printf("═════╬");
+  printf("═════════════════════════╬");
   for (unsigned int q = 0; q < task.quantityClasses.size(); q++)
   {
     for (unsigned int a = 0; a < results.size(); a++)
@@ -855,7 +857,7 @@ void StraightTrackAlignment::PrintLineSeparator(const std::vector<RPAlignmentCor
 
 void StraightTrackAlignment::PrintQuantitiesLine(const std::vector<RPAlignmentCorrectionsData> &results)
 {
-  printf("     ║");
+  printf("                         ║");
 
   for (unsigned int q = 0; q < task.quantityClasses.size(); q++)
   {
@@ -864,7 +866,7 @@ void StraightTrackAlignment::PrintQuantitiesLine(const std::vector<RPAlignmentCo
       size += (algorithms[a]->HasErrorEstimate()) ? 18 : 8;
     size += algorithms.size() - 1; 
 
-    const string &tag = AlignmentTask::QuantityClassTag(task.quantityClasses[q]);
+    const string &tag = task.QuantityClassTag(task.quantityClasses[q]);
     unsigned int space = (size - tag.size())/2;
     PrintN(" ", space);
     printf("%s", tag.c_str());
@@ -878,7 +880,7 @@ void StraightTrackAlignment::PrintQuantitiesLine(const std::vector<RPAlignmentCo
 
 void StraightTrackAlignment::PrintAlgorithmsLine(const std::vector<RPAlignmentCorrectionsData> &results)
 {
-  printf("     ║");
+  printf("                         ║");
 
   for (unsigned int q = 0; q < task.quantityClasses.size(); q++)
   {

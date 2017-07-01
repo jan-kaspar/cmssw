@@ -101,7 +101,7 @@ void AlignmentTask::BuildGeometry(const vector<unsigned int> &rpDecIds,
 
 //----------------------------------------------------------------------------------------------------
 
-string AlignmentTask::QuantityClassTag(QuantityClass qc)
+string AlignmentTask::QuantityClassTag(QuantityClass qc) const
 {
   switch (qc)
   {
@@ -115,7 +115,7 @@ string AlignmentTask::QuantityClassTag(QuantityClass qc)
 
 //----------------------------------------------------------------------------------------------------
 
-unsigned int AlignmentTask::QuantitiesOfClass(QuantityClass qc)
+unsigned int AlignmentTask::QuantitiesOfClass(QuantityClass qc) const
 {
   // TODO
   return geometry.Detectors();
@@ -123,7 +123,7 @@ unsigned int AlignmentTask::QuantitiesOfClass(QuantityClass qc)
 
 //----------------------------------------------------------------------------------------------------
 
-unsigned int AlignmentTask::ConstraintsForClass(QuantityClass qc)
+unsigned int AlignmentTask::ConstraintsForClass(QuantityClass qc) const
 {
   switch (qc)
   {
@@ -251,10 +251,10 @@ void AlignmentTask::BuildHomogeneousConstraints(vector<AlignmentConstraint> &con
 
 void AlignmentTask::BuildFixedDetectorsConstraints(vector<AlignmentConstraint> &constraints) const
 {
-  printf(">> AlignmentTask::BuildFixedDetectorsConstraints > not yet ported.\n");
-  throw 1;
+  // TODO
+  //printf(">> AlignmentTask::BuildFixedDetectorsConstraints > not yet ported.\n");
+  //throw 1;
 
-#if 0
   for (unsigned int cl = 0; cl < quantityClasses.size(); cl++)
   {
     const string &tag = QuantityClassTag(quantityClasses[cl]);
@@ -265,7 +265,6 @@ void AlignmentTask::BuildFixedDetectorsConstraints(vector<AlignmentConstraint> &
       case qcShR: basicNumber = 4; break;
       case qcRotZ: basicNumber = 1; break;
       case qcShZ: basicNumber = 2; break;
-      case qcRPShZ: basicNumber = 1; break;
     }
 
     const ParameterSet &classSettings = fixedDetectorsConstraints.getParameterSet(tag.c_str());
@@ -300,10 +299,7 @@ void AlignmentTask::BuildFixedDetectorsConstraints(vector<AlignmentConstraint> &
       ac.extended = (j >= basicNumber);
 
       char buf[40];
-      if (quantityClasses[cl] == qcRPShZ)
-        sprintf(buf, "%s: fixed RP %4u", tag.c_str(), ids[j]/10);
-      else
-        sprintf(buf, "%s: fixed plane %4u", tag.c_str(), ids[j]);
+      sprintf(buf, "%s: fixed plane %4u", tag.c_str(), ids[j]);
       ac.name = buf;
 
       // is the detector in geometry?
@@ -311,7 +307,8 @@ void AlignmentTask::BuildFixedDetectorsConstraints(vector<AlignmentConstraint> &
         throw cms::Exception("AlignmentTask::BuildFixedDetectorsConstraints") <<
           "Detector with id " << ids[j] << " is not in the geometry.";
 
-      unsigned int idx = geometry[ids[j]].matrixIndex;
+      const auto git = geometry.find(ids[j]);
+      unsigned int idx = git->second.matrixIndex;
       ac.coef[quantityClasses[cl]][idx] = 1.;
 
       constraints.push_back(ac);
@@ -320,7 +317,6 @@ void AlignmentTask::BuildFixedDetectorsConstraints(vector<AlignmentConstraint> &
     if (oneRotZPerPot && quantityClasses[cl] == qcRotZ)
         BuildOneRotZPerPotConstraints(constraints);
   }
-#endif
 }
 
 //----------------------------------------------------------------------------------------------------

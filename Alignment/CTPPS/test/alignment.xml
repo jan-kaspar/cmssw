@@ -7,7 +7,7 @@ TotemAlignment/RPDataFormats/src/RPAlignmentCorrectionsSequence.cc
 
 <xml DocumentType="AlignmentDescription">
 	<!-- strip, RP 103, plane 2 -->
-	<det id="1998127104" sh_x="100" sh_y="0" />
+	<det id="1998127104" sh_x="0" sh_y="100" />
 
 	<!--
 

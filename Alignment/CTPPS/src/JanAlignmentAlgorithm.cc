@@ -51,14 +51,16 @@ void JanAlignmentAlgorithm::Begin(const edm::EventSetup&)
   // initialize M and S components
   Mc = new TVectorD[task->quantityClasses.size()];
   Sc = new TMatrixD* [task->quantityClasses.size()];
-  for (unsigned int i = 0; i < task->quantityClasses.size(); i++) {
+  for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
+  {
     unsigned int rows = task->QuantitiesOfClass(task->quantityClasses[i]);
 
     Mc[i].ResizeTo(rows);
     Mc[i].Zero();
 
     Sc[i] = new TMatrixD[task->quantityClasses.size()];
-    for (unsigned int j = 0; j < task->quantityClasses.size(); j++) {
+    for (unsigned int j = 0; j < task->quantityClasses.size(); j++)
+    {
       unsigned int cols = task->QuantitiesOfClass(task->quantityClasses[j]);
       Sc[i][j].ResizeTo(rows, cols);
       Sc[i][j].Zero();
@@ -282,7 +284,8 @@ vector<SingularMode> JanAlignmentAlgorithm::Analyze()
   for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
     dim += Mc[i].GetNrows();
 
-  if (verbosity > 2) {
+  if (verbosity > 2)
+  {
     printf("\tdetectors: %u\n", task->geometry.Detectors());
     printf("\tRPs: %u\n", task->geometry.RPs());
     printf("\tfull dimension: %u\n", dim);
@@ -292,7 +295,8 @@ vector<SingularMode> JanAlignmentAlgorithm::Analyze()
   // build full M
   M.ResizeTo(dim);
   unsigned int offset = 0;
-  for (unsigned int i = 0; i < task->quantityClasses.size(); i++) {
+  for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
+  {
     M.SetSub(offset, Mc[i]);
     offset += Mc[i].GetNrows();
   }
@@ -300,10 +304,12 @@ vector<SingularMode> JanAlignmentAlgorithm::Analyze()
   // build full S
   S.ResizeTo(dim, dim);
   unsigned int r_offset = 0, c_offset = 0;
-  for (unsigned int i = 0; i < task->quantityClasses.size(); i++) {
+  for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
+  {
     c_offset = 0;
     unsigned int r_size = 0, c_size = 0;
-    for (unsigned int j = 0; j < task->quantityClasses.size(); j++) {
+    for (unsigned int j = 0; j < task->quantityClasses.size(); j++)
+    {
       r_size = Sc[i][j].GetNrows();
       c_size = Sc[i][j].GetNcols();
       TMatrixDSub(S, r_offset, r_offset+r_size-1, c_offset, c_offset+c_size-1) = Sc[i][j];
@@ -313,16 +319,20 @@ vector<SingularMode> JanAlignmentAlgorithm::Analyze()
   }
  
   // analyze symmetricity
-  if (verbosity > 2) {
+  if (verbosity > 2)
+  {
     double maxDiff = 0., maxElem = 0.;
     for (unsigned int i = 0; i < dim; i++)
-      for (unsigned int j = 0; j < dim; j++) {
+    {
+      for (unsigned int j = 0; j < dim; j++)
+      {
         double diff = S[i][j] - S[j][i];
         if (fabs(diff) > maxDiff)
           maxDiff = diff;
         if (S[i][j] > maxElem)
           maxElem = S[i][j];
       }
+    }
 
     printf("\n* S matrix:\n\tdimension = %i\n\tmaximum asymmetry: %E\t(ratio to maximum element %E)\n", dim, maxDiff, maxDiff/maxElem);
   }
@@ -330,9 +340,12 @@ vector<SingularMode> JanAlignmentAlgorithm::Analyze()
   // make a symmetric copy
   TMatrixDSym S_sym(dim);
   for (unsigned int j = 0; j < dim; j++)
-    for (unsigned int i = 0; i < dim; i++) {
+  {
+    for (unsigned int i = 0; i < dim; i++)
+    {
       S_sym[i][j] = S[i][j];
     }
+  }
   
   // eigen analysis of S
   TMatrixDSymEigen S_eig(S_sym);
@@ -344,9 +357,11 @@ vector<SingularMode> JanAlignmentAlgorithm::Analyze()
   S_eigVec = S_eigVec_temp;
 
   // identify singular modes
-  for (int i = 0; i < S_eigVal.GetNrows(); i++) {
+  for (int i = 0; i < S_eigVal.GetNrows(); i++)
+  {
     double nev = S_eigVal[i] / events;
-    if (fabs(nev) < singularLimit) {
+    if (fabs(nev) < singularLimit)
+    {
       SingularMode sM;
       sM.val = S_eigVal[i];
       sM.vec.ResizeTo(dim);
@@ -358,7 +373,8 @@ vector<SingularMode> JanAlignmentAlgorithm::Analyze()
   
 #if 0
   // print singular vectors
-  if (singularModes.size() > 0) {
+  if (singularModes.size() > 0)
+  {
     printf("\n* S singular modes\n   | ");
     for (unsigned int i = 0; i < singularModes.size(); i++)
       printf("%+10.3E   ", singularModes[i].val);
@@ -368,9 +384,11 @@ vector<SingularMode> JanAlignmentAlgorithm::Analyze()
       printf("----------   ");
     printf("\n");
 
-    for (unsigned int j = 0; j < dim; j++) {
+    for (unsigned int j = 0; j < dim; j++)
+    {
       printf("%2u | ", j);
-      for (unsigned int i = 0; i < singularModes.size(); i++) {
+      for (unsigned int i = 0; i < singularModes.size(); i++)
+      {
         printf("%+10.3E   ", singularModes[i].vec[j]);
       }
       printf("\n");
@@ -394,11 +412,14 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
   unsigned int dim = S.GetNrows();
   TMatrixD C(dim, constraints.size());
   TMatrixD C2(dim, constraints.size());
-  for (unsigned int i = 0; i < constraints.size(); i++) {
+  for (unsigned int i = 0; i < constraints.size(); i++)
+  {
     unsigned int offset = 0;
-    for (unsigned int j = 0; j < task->quantityClasses.size(); j++) {
+    for (unsigned int j = 0; j < task->quantityClasses.size(); j++)
+    {
       const TVectorD &cv = constraints[i].coef.find(task->quantityClasses[j])->second;
-      for (int k = 0; k < cv.GetNrows(); k++) {
+      for (int k = 0; k < cv.GetNrows(); k++)
+      {
         C[offset][i] = events * cv[k];
         C2[offset][i] = events * cv[k]*1E3;
         offset++;
@@ -423,14 +444,21 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
   CS.Zero();
   CS2.Zero();
   for (unsigned int j = 0; j < dim; j++)
-    for (unsigned int i = 0; i < dim; i++) {
+  {
+    for (unsigned int i = 0; i < dim; i++)
+    {
       CS[i][j] = S[i][j];
       CS2[i][j] = S[i][j];
     }
+  }
+
   for (unsigned int i = 0; i < constraints.size(); i++)
-    for (unsigned int j = 0; j < dim; j++) {
+  {
+    for (unsigned int j = 0; j < dim; j++)
+    {
       CS[j][dim + i] = CS[dim + i][j] =  C(j, i);
       CS2[j][dim + i] = CS2[dim + i][j] =  C2(j, i);
+    }
   }
 
   // eigen analysis of CS matrix
@@ -443,22 +471,26 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
   printf("   #          CS    norm. CS               S     norm. S\n");
   unsigned int singularModeCount = 0;
   vector<unsigned int> weakModeIdx;
-  for (int i = 0; i < CS_eigVal.GetNrows(); i++) {
-
+  for (int i = 0; i < CS_eigVal.GetNrows(); i++)
+  {
     double CS_nev = CS_eigVal[i]/events;
     printf("%4i%+12.2E%+12.2E", i, CS_eigVal[i], CS_nev);
-    if (fabs(CS_nev) < singularLimit) {
+    if (fabs(CS_nev) < singularLimit)
+    {
       singularModeCount++;
       printf(" (S)");
-    } else
-      if (fabs(CS_nev) < weakLimit) {
+    } else {
+      if (fabs(CS_nev) < weakLimit)
+      {
         weakModeIdx.push_back(i);
         printf(" (W)");
       } else {
         printf("    ");
       }
+    }
 
-    if (i < S_eigVal.GetNrows()) {
+    if (i < S_eigVal.GetNrows())
+    {
       double S_nev = S_eigVal[i]/events;
       printf("%+12.2E%+12.2E", S_eigVal[i], S_nev);
       if (fabs(S_nev) < singularLimit)
@@ -472,11 +504,13 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
   }
 
   // print weak vectors
-  if (weakModeIdx.size() > 0) {
+  if (weakModeIdx.size() > 0)
+  {
     unsigned int columns = 10;
     unsigned int first = 0;
     
-    while (first < weakModeIdx.size()) {
+    while (first < weakModeIdx.size())
+    {
       unsigned int last = first + columns;
       if (last >= weakModeIdx.size())
         last = weakModeIdx.size();
@@ -492,9 +526,11 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
       
       // determine maximum elements
       vector<double> maxs;
-      for (unsigned int i = first; i < last; i++) {
+      for (unsigned int i = first; i < last; i++)
+      {
         double max = 0;
-        for (unsigned int j = 0; j < dim + constraints.size(); j++) {
+        for (unsigned int j = 0; j < dim + constraints.size(); j++)
+        {
           double v = fabs(CS_eigVec(weakModeIdx[i], j));
           if (v > max)
             max = v;
@@ -502,9 +538,11 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
         maxs.push_back(max);
       }
   
-      for (unsigned int j = 0; j < dim + constraints.size(); j++) {
+      for (unsigned int j = 0; j < dim + constraints.size(); j++)
+      {
         printf("%3u | ", j);
-        for (unsigned int i = first; i < last; i++) {
+        for (unsigned int i = first; i < last; i++)
+        {
           double v = CS_eigVec(weakModeIdx[i], j);
           if (fabs(v)/maxs[i-first] > 1E-3)
             printf("%+10.3E   ", v);
@@ -520,7 +558,8 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
     printf("\n* CS has no weak modes\n");
 
   // check the regularity of C^T E
-  if (E.GetNcols() == C.GetNcols()) {
+  if (E.GetNcols() == C.GetNcols())
+  {
     TMatrixD CTE(C, TMatrixD::kTransposeMult, E);
     Print(CTE, "* CTE matrix:");
     const double &det = CTE.Determinant();
@@ -530,7 +569,8 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
     printf(">> JanAlignmentAlgorithm::Solve > WARNING: C matrix has %u, while E matrix %u columns.\n", C.GetNcols(), E.GetNcols());
 
   // stop if CS is singular
-  if (singularModeCount > 0) {
+  if (singularModeCount > 0)
+  {
     LogProblem("JanAlignmentAlgorithm") << "\n>> JanAlignmentAlgorithm::Solve > ERROR: There are "
       << singularModeCount << " singular modes in CS matrix.";
     if (stopOnSingularModes)
@@ -564,7 +604,9 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
   
   double max1 = -1., max2 = -1., maxDiff = -1.;
   for (int i = 0; i < EMdiff.GetNrows(); i++)
-    for (int j = 0; j < EMdiff.GetNcols(); j++) {
+  {
+    for (int j = 0; j < EMdiff.GetNcols(); j++)
+    {
       if (maxDiff < fabs(EMdiff(i, j)))
         maxDiff = fabs(EMdiff(i, j));
 
@@ -573,6 +615,7 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
       
       if (max2 < fabs(EM2(i, j)))
         max2 = fabs(EM2(i, j));
+    }
   }
 
   printf("EM max = %E, EM2 max = %E, EM2 - EM max = %E\n", max1, max2, maxDiff);
@@ -591,9 +634,13 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
 
   double max = -1.;
   for (int i = 0; i < EMEi.GetNrows(); i++)
+  {
     for (int j = 0; j < EMEi.GetNcols(); j++)
+    {
       if (max < EMEi(i, j))
         max = EMEi(i, j);
+    }
+  }
 
   printf("max = %E\n", max);
   
@@ -608,10 +655,11 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
   // print lambda values
   printf("\n* Lambda (from the contribution of singular modes to MV)\n");
   for (unsigned int i = 0; i < constraints.size(); i++)
+  {
     printf("\t%u (%25s)\t%+10.1E +- %10.1E\n", i, constraints[i].name.c_str(),
         AL[dim+i]*1E3,
         sqrt(EM[i+dim][i+dim])*1E3);
-  
+  }
   
   // fill results
   unsigned int offset = 0;
