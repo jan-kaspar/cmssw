@@ -27,11 +27,11 @@ struct Hit
   /// measurement position; mm
   double sigma;
 
-  // TODO: estimate of z global ??
-  //  for strips and diamond: copy constant from geometry
-  //  for pixels: evaluate global z from local vector (m1, m2, 0)
+  /// global z - AlignmentGeometry::z0, mm
+  double z;
 
-  Hit(unsigned int _id=0, unsigned int _dirIdx=0, double _pos=0, double _sig=0) : id(_id), dirIdx(_dirIdx), position(_pos), sigma(_sig)
+  Hit(unsigned int _id=0, unsigned int _dirIdx=0, double _pos=0, double _sig=0, double _z=0) :
+    id(_id), dirIdx(_dirIdx), position(_pos), sigma(_sig), z(_z)
   {
   }
 };

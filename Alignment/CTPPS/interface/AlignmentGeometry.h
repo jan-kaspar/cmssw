@@ -28,7 +28,7 @@ struct DetGeometry
 
   struct DirectionData
   {
-    double dx, dy;              ///< x and y components of the direction unit vector in global coordinates
+    double dx, dy, dz;          ///< x, y and z components of the direction unit vector in global coordinates
     double s;                   ///< projection of (sx, sy) to (dx, dy)
   };
 
@@ -46,9 +46,9 @@ struct DetGeometry
   {
   }
 
-  void SetDirection(unsigned int idx, double dx, double dy)
+  void SetDirection(unsigned int idx, double dx, double dy, double dz)
   {
-    directionData[idx] = { dx, dy, dx*sx + dy*sy};
+    directionData[idx] = { dx, dy, dz, dx*sx + dy*sy};
   }
 
   const DirectionData& GetDirectionData(unsigned int idx) const

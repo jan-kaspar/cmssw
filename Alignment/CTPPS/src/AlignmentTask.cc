@@ -87,8 +87,8 @@ void AlignmentTask::BuildGeometry(const vector<unsigned int> &rpDecIds,
     }
 
     DetGeometry dg(c.z() - z0, c.x(), c.y(), isU);
-    dg.SetDirection(1, d1.x(), d1.y());
-    dg.SetDirection(2, d2.x(), d2.y());
+    dg.SetDirection(1, d1.x(), d1.y(), d1.z());
+    dg.SetDirection(2, d2.x(), d2.y(), d2.z());
     geometry.Insert(it->first, dg);
   }
 

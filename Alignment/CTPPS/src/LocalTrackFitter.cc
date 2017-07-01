@@ -97,17 +97,15 @@ void LocalTrackFitter::FitAndRemoveOutliers(HitCollection &selection, const Alig
     const DetGeometry &d = dit->second;
     const auto &dirData = d.GetDirectionData(it->dirIdx);
 
-    // TODO: use z from hit
-    A(j, 0) = d.z * dirData.dx;
+    A(j, 0) = it->z * dirData.dx;
     A(j, 1) = dirData.dx;
-    A(j, 2) = d.z * dirData.dy;
+    A(j, 2) = it->z * dirData.dy;
     A(j, 3) = dirData.dy;
 
-    measVec(j) = it->position + dirData.s;  // in mm
+    measVec(j) = it->position + dirData.s - (it->z - d.z) * dirData.dz;  // in mm
 
     Vi(j, j) = 1. / it->sigma / it->sigma;
   }
-  //Print(A, "alpha");
 
   // evaluate local track parameter estimates (h stands for hat)
   TMatrixD AT(4, selection.size());

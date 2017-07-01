@@ -71,7 +71,7 @@ void AlignmentGeometry::Print() const
 
     for (const auto &dit : it->second.directionData)
     {
-      printf("dir%u: %+.3f, %+.3f │ ", dit.first, dit.second.dx, dit.second.dy);
+      printf("dir%u: %+.3f, %+.3f, %+.3f │ ", dit.first, dit.second.dx, dit.second.dy, dit.second.dz);
     }
 
     if (CTPPSDetId(it->first).subdetId() == CTPPSDetId::sdTrackingStrip)

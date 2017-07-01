@@ -280,9 +280,9 @@ void StraightTrackAlignment::Begin(const EventSetup &es)
   selectedTracksPerRPSet.clear();
   
   // prepare geometry (in fact, this should be done whenever es gets changed)
-  ESHandle<TotemRPGeometry> geomH;
-  es.get<VeryForwardRealGeometryRecord>().get(geomH);
-  task.BuildGeometry(rpIds, excludePlanes, geomH.product(), z0, task.geometry);  
+  ESHandle<TotemRPGeometry> hGeometry;
+  es.get<VeryForwardRealGeometryRecord>().get(hGeometry);
+  task.BuildGeometry(rpIds, excludePlanes, hGeometry.product(), z0, task.geometry);  
 
   // print geometry info
   if (verbosity > 1)
@@ -333,8 +333,10 @@ void StraightTrackAlignment::ProcessEvent(const DetSetVector<TotemRPRecHit> &hit
     if (find(rpIds.begin(), rpIds.end(), rpDecId) == rpIds.end())
       continue;
 
+    const double &z = task.geometry[pv.detId()].z;
+
     for (const auto &h : pv)
-      hitSelection.emplace_back(Hit(pv.detId(), 2, h.getPosition(), h.getSigma()));
+      hitSelection.emplace_back(Hit(pv.detId(), 2, h.getPosition(), h.getSigma(), z));
   }
 
   // diamonds
@@ -347,8 +349,10 @@ void StraightTrackAlignment::ProcessEvent(const DetSetVector<TotemRPRecHit> &hit
     if (find(rpIds.begin(), rpIds.end(), rpDecId) == rpIds.end())
       continue;
 
+    const double &z = task.geometry[pv.detId()].z;
+
     for (const auto &h : pv)
-      hitSelection.emplace_back(Hit(pv.detId(), 1, h.getX(), h.getXWidth() / sqrt(12.)));
+      hitSelection.emplace_back(Hit(pv.detId(), 1, h.getX(), h.getXWidth() / sqrt(12.), z));
   }
 
   // pixels
@@ -363,8 +367,13 @@ void StraightTrackAlignment::ProcessEvent(const DetSetVector<TotemRPRecHit> &hit
 
     for (const auto &h : pv)
     {
-      hitSelection.emplace_back(Hit(pv.detId(), 1, h.getPoint().x(), sqrt(h.getError().xx())));
-      hitSelection.emplace_back(Hit(pv.detId(), 2, h.getPoint().y(), sqrt(h.getError().yy())));
+      const auto &dg = task.geometry[pv.detId()];
+      const double dz1 = dg.GetDirectionData(1).dz;
+      const double dz2 = dg.GetDirectionData(2).dz;
+      const double z = dg.z + h.getPoint().x() * dz1 + h.getPoint().y() * dz2;
+
+      hitSelection.emplace_back(Hit(pv.detId(), 1, h.getPoint().x(), sqrt(h.getError().xx()), z));
+      hitSelection.emplace_back(Hit(pv.detId(), 2, h.getPoint().y(), sqrt(h.getError().yy()), z));
     }
   }
 
@@ -530,10 +539,9 @@ void StraightTrackAlignment::UpdateDiagnosticHistograms(const HitCollection &sel
     DetGeometry &d = dit->second;
     const auto dirData = d.GetDirectionData(hitCollectionIterator->dirIdx);
 
-    // TODO: z from hit
     double m = hitCollectionIterator->position + dirData.s;
-    double x = trackFit.ax * d.z + trackFit.bx;
-    double y = trackFit.ay * d.z + trackFit.by;
+    double x = trackFit.ax * hitCollectionIterator->z + trackFit.bx;
+    double y = trackFit.ay * hitCollectionIterator->z + trackFit.by;
     double f = x*dirData.dx + y*dirData.dy;
     double R = m - f;
 
