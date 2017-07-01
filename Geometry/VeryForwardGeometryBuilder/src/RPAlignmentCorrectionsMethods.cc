@@ -47,7 +47,8 @@ RPAlignmentCorrectionsData RPAlignmentCorrectionsMethods::GetCorrectionsDataFrom
   try {
     XMLPlatformUtils::Initialize();
   }
-  catch (const XMLException& toCatch) {
+  catch (const XMLException& toCatch)
+  {
     char* message = XMLString::transcode(toCatch.getMessage());
     throw cms::Exception("RPAlignmentCorrectionsMethods") << "An XMLException caught with message: " << message << ".\n";
     XMLString::release(&message);
@@ -60,7 +61,8 @@ RPAlignmentCorrectionsData RPAlignmentCorrectionsMethods::GetCorrectionsDataFrom
   try {
     parser->parse(fn.c_str());
   }
-  catch (...) {
+  catch (...)
+  {
     throw cms::Exception("RPAlignmentCorrectionsMethods") << "Cannot parse file `" << fn << "' (exception)." << endl;
   }
 
@@ -190,80 +192,48 @@ RPAlignmentCorrectionsData RPAlignmentCorrectionsMethods::GetCorrectionsData(DOM
 void RPAlignmentCorrectionsMethods::WriteXML(const RPAlignmentCorrectionData & data, FILE *f, bool precise, bool wrErrors, bool wrSh_r, bool wrSh_xy,
   bool wrSh_z, bool wrRot_z)
 {
-  if (wrSh_r) {
-    WRITE(data.sh_r, 2, 0.1);
-    if (wrErrors) {
-      WRITE(data.sh_r_e, 2, 0.1);
-    }
-    /*
-    fprintf(f, " sh_r=\"%+8.2f\"", data.sh_r()*1E3);
+  if (wrSh_r)
+  {
+    WRITE(data.sh_r1, 2, 0.1);
+    WRITE(data.sh_r2, 2, 0.1);
     if (wrErrors)
-      if (fabs(data.sh_r_e())*1E3 < 0.1)
-        fprintf(f, " sh_r_e=\"%+8.1E\"", data.sh_r_e()*1E3);
-      else
-        fprintf(f, " sh_r_e=\"%+8.2f\"", data.sh_r_e()*1E3);
-    */
+    {
+      WRITE(data.sh_r1_e, 2, 0.1);
+      WRITE(data.sh_r2_e, 2, 0.1);
+    }
   }
 
-  if (wrSh_xy) {
+  if (wrSh_xy)
+  {
     WRITE(data.sh_x, 2, 0.1);
     WRITE(data.sh_y, 2, 0.1);
-    if (wrErrors) {
+    if (wrErrors)
+    {
       WRITE(data.sh_x_e, 2, 0.1);
       WRITE(data.sh_y_e, 2, 0.1);
     }
-    /*
-    fprintf(f, " sh_x=\"%+8.2f\" sh_y=\"%+8.2f\"", data.sh_x()*1E3, data.sh_y()*1E3);
-    if (wrErrors) {
-      if (fabs(data.sh_x_e())*1E3 < 0.1)
-        fprintf(f, " sh_x_e=\"%+8.1E\"", data.sh_x_e()*1E3);
-      else
-        fprintf(f, " sh_x_e=\"%+8.2f\"", data.sh_x_e()*1E3);
-
-      if (fabs(data.sh_y_e())*1E3 < 0.1)
-        fprintf(f, " sh_y_e=\"%+8.1E\"", data.sh_y_e()*1E3);
-      else
-        fprintf(f, " sh_y_e=\"%+8.2f\"", data.sh_y_e()*1E3);
-    }
-    */
   }
 
-  // TODO: add the other 2 rotations
-
-  if (wrRot_z) {
+  if (wrRot_z)
+  {
     WRITE(data.rot_z, 3, 0.01);
-    if (wrErrors) {
+    if (wrErrors)
+    {
       WRITE(data.rot_z_e, 3, 0.01);
     }
-    /*
-    fprintf(f, " rot_z=\"%+8.3f\"", data.rot_z()*1E3);
-    if (wrErrors)
-      if (fabs(data.rot_z_e())*1E3 < 0.01)
-        fprintf(f, " rot_z_e=\"%+8.1E\"", data.rot_z_e()*1E3);
-      else
-        fprintf(f, " rot_z_e=\"%+8.3f\"", data.rot_z_e()*1E3);
-    */
   }
 
-  if (wrSh_z) {
+  if (wrSh_z)
+  {
     WRITE(data.sh_z, 2, 0.1);
-    if (wrErrors) {
+    if (wrErrors)
+    {
       WRITE(data.sh_z_e, 2, 0.1);
     }
-
-    /*
-    fprintf(f, " sh_z=\"%+8.2f\"", data.sh_z()*1E3);
-    if (wrErrors)
-      if (fabs(data.sh_z_e())*1E3 < 0.1)
-        fprintf(f, " sh_z_e=\"%+8.1E\"", data.sh_z_e()*1E3);
-      else
-        fprintf(f, " sh_z_e=\"%+8.2f\"", data.sh_z_e()*1E3);
-    */
   }
 }
 
 #undef WRITE
-
 
 //----------------------------------------------------------------------------------------------------
 

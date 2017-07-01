@@ -14,6 +14,8 @@
 #include <Math/RotationZYX.h>
 #include <vector>
 
+/// TODO: this an incomplete extension to have 2 read-out directions, many things will not work
+
 /**
  *\brief Alignment correction or result of alignment procedure for a single RP sensor. 
  * Within the geometry description, every sensor (more generally every element) is given
@@ -72,10 +74,10 @@ class RPAlignmentCorrectionData
   
   /// translation in the readout direction, in mm; needed for track-based alignment results
   /// NOTE: no guarantee that its value would correspond to the 'translation' vector!
-  double translation_r;
+  double translation_r1, translation_r2;
   
   /// the uncertainty of readout-dir. translation
-  double translation_r_error; 
+  double translation_r1_error, translation_r2_error; 
 
   /// the three rotation angles
   /// in rad
@@ -99,52 +101,94 @@ public:
   RPAlignmentCorrectionData(double sh_x = 0., double sh_y = 0., double sh_z = 0., double rot_z = 0.);
 
   const math::XYZVectorD& getTranslation() const
-    { return translation; }
+  {
+    return translation;
+  }
 
   const math::XYZVectorD& getTranslationError() const
-    { return translation_error; }
+  {
+    return translation_error;
+  }
 
   double rotationZ() const
-    { return rotation_z; } 
+  {
+    return rotation_z;
+  }
 
   double rotationZError() const
-    { return rotation_z_error; } 
+  {
+    return rotation_z_error;
+  } 
 
   RotationMatrix getRotationMatrix() const
   { return RotationMatrix(ROOT::Math::RotationZYX(rotation_z, rotation_y, rotation_x));}
 
-  double sh_r() const
-    { return translation_r; }
+  double sh_r1() const
+  {
+    return translation_r1;
+  }
 
-  double sh_r_e() const
-    { return translation_r_error; }
+  double sh_r1_e() const
+  {
+    return translation_r1_error;
+  }
+
+  double sh_r2() const
+  {
+    return translation_r2;
+  }
+
+  double sh_r2_e() const
+  {
+    return translation_r2_error;
+  }
 
   double sh_x() const
-    { return translation.x(); }
+  {
+    return translation.x();
+  }
 
   double sh_x_e() const
-    { return translation_error.x(); }
+  {
+    return translation_error.x();
+  }
 
   double sh_y() const
-    { return translation.y(); }
+  {
+    return translation.y();
+  }
 
   double sh_y_e() const
-    { return translation_error.y(); }
+  {
+    return translation_error.y();
+  }
 
   double sh_z() const
-    { return translation.z(); }
+  {
+    return translation.z();
+  }
 
   double sh_z_e() const
-    { return translation_error.z(); }
+  {
+    return translation_error.z();
+  }
 
   double rot_z() const
-    { return rotation_z; }
+  {
+    return rotation_z;
+  }
 
   double rot_z_e() const
-    { return rotation_z_error; }
+  {
+    return rotation_z_error;
+  }
   
-  void setTranslationR(double sh_r, double sh_r_e = 0.);
+  void setTranslationR1(double sh_r1, double sh_r1_e = 0.);
+
+  void setTranslationR2(double sh_r2, double sh_r2_e = 0.);
+
   void setTranslationZ(double sh_z, double sh_z_e = 0.);
+
   void setRotationZ(double rot_z, double rot_z_e = 0.);
 
   /// merges (cumulates) alignements
