@@ -136,7 +136,7 @@ ctppsStraightTrackAligner = cms.EDAnalyzer("CTPPSStraightTrackAligner",
     buildDiagnosticPlots = cms.bool(True),
     diagnosticsFile = cms.string(''),
 
-    fileNamePrefix = cms.string(''),
+    fileNamePrefix = cms.string('output_'),
     cumulativeFileNamePrefix = cms.string('cumulative_results_'),
     expandedFileNamePrefix = cms.string('cumulative_expanded_results_'),
     factoredFileNamePrefix = cms.string('cumulative_factored_results_'),

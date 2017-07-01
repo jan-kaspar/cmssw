@@ -65,7 +65,10 @@ CTPPSModifySingularModes::CTPPSModifySingularModes(const ParameterSet &_ps) : ps
 
 void CTPPSModifySingularModes::beginRun(edm::Run const&, edm::EventSetup const& es)
 {
-  printf(">> CTPPSModifySingularModes::beginRun\n");
+  printf(">> CTPPSModifySingularModes::beginRun > not yet ported\n");
+  throw 1;
+
+#if 0
 
   // get input alignments
   RPAlignmentCorrectionsData input; // TODO: load this file: (ps.getUntrackedParameter<string>("inputFile"));
@@ -162,6 +165,7 @@ void CTPPSModifySingularModes::beginRun(edm::Run const&, edm::EventSetup const& 
   output.FactorRPFromSensorCorrections(expanded, factored, alGeom);
   factored.WriteXMLFile(ps.getUntrackedParameter<string>("outputFile"));
   */
+#endif
 }
 
 //----------------------------------------------------------------------------------------------------

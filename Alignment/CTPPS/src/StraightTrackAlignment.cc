@@ -14,6 +14,7 @@
 
 #include "CondFormats/AlignmentRecord/interface/RPRealAlignmentRecord.h"
 #include "Geometry/VeryForwardGeometryBuilder/interface/TotemRPGeometry.h"
+#include "Geometry/VeryForwardGeometryBuilder/interface/RPAlignmentCorrectionsMethods.h"
 #include "Geometry/Records/interface/VeryForwardRealGeometryRecord.h"
 
 #include "Alignment/CTPPS/interface/IdealResult.h"
@@ -742,24 +743,26 @@ void StraightTrackAlignment::Finish()
   PrintLineSeparator(results);
 
   // save results
-// TODO
-#if 0
   for (unsigned int a = 0; a < results.size(); a++)
   {
     // convert readout corrections to X and Y
-    for (RPAlignmentCorrectionsData::mapType::iterator it = results[a].sensors.begin();
-        it != results[a].sensors.end(); ++it)
+    for (RPAlignmentCorrectionsData::mapType::iterator it = results[a].sensors.begin(); it != results[a].sensors.end(); ++it)
     {
       DetGeometry &d = task.geometry[it->first];
-      double cos = d.dx, sin = d.dy;
-      it->second.ReadoutTranslationToXY(cos, sin);
+      const auto dirData1 = d.GetDirectionData(1);
+      const auto dirData2 = d.GetDirectionData(2);
+      it->second.readoutTranslationsToXY(dirData1.dx, dirData1.dy, dirData2.dx, dirData2.dy);
     }
 
     // write non-cumulative results
     if (!fileNamePrefix.empty())
-      results[a].WriteXMLFile(fileNamePrefix + algorithms[a]->GetName() + ".xml",
+    {
+      RPAlignmentCorrectionsMethods::WriteXMLFile(results[a], fileNamePrefix + algorithms[a]->GetName() + ".xml",
         preciseXMLFormat, algorithms[a]->HasErrorEstimate());
+    }
 
+    // TODO
+/*
     // merge alignments
     RPAlignmentCorrectionsData cumulativeAlignments;
     cumulativeAlignments.AddCorrections(initialAlignments, false);
@@ -780,7 +783,10 @@ void StraightTrackAlignment::Finish()
     if (!cumulativeFileNamePrefix.empty())
       cumulativeAlignments.WriteXMLFile(cumulativeFileNamePrefix + algorithms[a]->GetName() + ".xml",
         preciseXMLFormat, algorithms[a]->HasErrorEstimate());
+*/
 
+    // TODO
+/*
     // write expanded and factored results
     if (!expandedFileNamePrefix.empty() || !factoredFileNamePrefix.empty())
     {
@@ -801,12 +807,12 @@ void StraightTrackAlignment::Finish()
         factoredAlignments.WriteXMLFile(factoredFileNamePrefix + algorithms[a]->GetName() + ".xml",
           preciseXMLFormat, algorithms[a]->HasErrorEstimate());
     }
+*/
   }
-#endif
   
   // prepare algorithms for destructions
-  for (vector<AlignmentAlgorithm *>::iterator it = algorithms.begin(); it != algorithms.end(); ++it)
-    (*it)->End();
+  for (const auto &algorithm : algorithms)
+    algorithm->End();
 }
 
 //----------------------------------------------------------------------------------------------------

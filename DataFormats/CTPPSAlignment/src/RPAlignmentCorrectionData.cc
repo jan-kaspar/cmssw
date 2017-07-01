@@ -27,10 +27,11 @@ RPAlignmentCorrectionData::RPAlignmentCorrectionData(double sh_r, double sh_r_e,
 
 //----------------------------------------------------------------------------------------------------
 
-RPAlignmentCorrectionData::RPAlignmentCorrectionData(double sh_r, double sh_r_e, double sh_x, double sh_x_e, 
-    double sh_y, double sh_y_e, double sh_z, double sh_z_e, double rot_z, double rot_z_e) :
+RPAlignmentCorrectionData::RPAlignmentCorrectionData(double sh_r1, double sh_r1_e, double sh_r2, double sh_r2_e,
+    double sh_x, double sh_x_e, double sh_y, double sh_y_e, double sh_z, double sh_z_e, double rot_z, double rot_z_e) :
   translation(sh_x, sh_y, sh_z), translation_error(sh_x_e, sh_y_e, sh_z_e),
-  translation_r1(sh_r), translation_r1_error(sh_r_e),
+  translation_r1(sh_r1), translation_r2(sh_r2),
+  translation_r1_error(sh_r1_e), translation_r2_error(sh_r2_e),
   rotation_x(0.), rotation_y(0.), rotation_z(rot_z), 
   rotation_x_error(0.), rotation_y_error(0.), rotation_z_error(rot_z_e)
 {
@@ -40,7 +41,8 @@ RPAlignmentCorrectionData::RPAlignmentCorrectionData(double sh_r, double sh_r_e,
 
 RPAlignmentCorrectionData::RPAlignmentCorrectionData(double sh_x, double sh_y, double sh_z, double rot_z) : 
   translation(sh_x, sh_y, sh_z), translation_error(0., 0., 0.),
-  translation_r1(0.), translation_r1_error(0.),
+  translation_r1(0.), translation_r2(0.),
+  translation_r1_error(0.), translation_r2_error(0.),
   rotation_x(0.), rotation_y(0.), rotation_z(rot_z), 
   rotation_x_error(0.), rotation_y_error(0.), rotation_z_error(0.)
 {
@@ -64,6 +66,8 @@ void RPAlignmentCorrectionData::add(const RPAlignmentCorrectionData &a, bool sum
       translation_r1_error = sqrt(a.translation_r1_error*a.translation_r1_error + translation_r1_error*translation_r1_error);
     else
       translation_r1_error = a.translation_r1_error;
+
+    // TODO: translation_r2
   }
 
   if (addShXY)
@@ -100,28 +104,44 @@ void RPAlignmentCorrectionData::add(const RPAlignmentCorrectionData &a, bool sum
 
 //----------------------------------------------------------------------------------------------------
 
-void RPAlignmentCorrectionData::readoutTranslationToXY(double dx, double dy)
+void RPAlignmentCorrectionData::readoutTranslationsToXY(double d1x, double d1y, double d2x, double d2y)
 {
-  double tr_z = translation.z();
-  translation.SetXYZ(translation_r1*dx, translation_r1*dy, tr_z);
+  const double tr_z = translation.z();
+  const double D = d1x*d2y - d1y*d2x;
+  const double tr_x = (d2y * translation_r1 - d1y * translation_r2) / D;
+  const double tr_y = (-d2x * translation_r1 + d1x * translation_r2) / D;
 
+  translation.SetXYZ(tr_x, tr_y, tr_z);
+
+  // TODO: error propagation
+  /*
   tr_z = translation_error.z();
   translation_error.SetXYZ(translation_r1_error*dx, translation_r1_error*dy, tr_z);
+  */
 }
 
 //----------------------------------------------------------------------------------------------------
 
-void RPAlignmentCorrectionData::xyTranslationToReadout(double dx, double dy)
+void RPAlignmentCorrectionData::xyTranslationToReadout(double d1x, double d1y, double d2x, double d2y)
 {
-  double dot = dx*translation.x() + dy*translation.y();
-  translation_r1 = dot;
-  translation.SetXYZ(dot*dx, dot*dy, translation.z());
+  double dot1 = d1x*translation.x() + d1y*translation.y();
+  translation_r1 = dot1;
+
+  // TODO: why this?
+  //translation.SetXYZ(dot*dx, dot*dy, translation.z());
 
   // there is a very high correlation between x and y components of translation_error
   //double dot_error = sqrt(dx*dx * translation_error.x()*translation_error.x() + dy*dy * translation_error.y()*translation_error.y());
   double dot_error = sqrt(translation_error.x()*translation_error.x() + translation_error.y()*translation_error.y());
   translation_r1_error = dot_error;
-  translation_error.SetXYZ(dot_error*dx, dot_error*dy, translation_error.z());
+
+  // TODO: why this?
+  //translation_error.SetXYZ(dot_error*dx, dot_error*dy, translation_error.z());
+
+  double dot2 = d2x*translation.x() + d2y*translation.y();
+  translation_r2 = dot2;
+
+  translation_r2_error = dot_error;
 }
 
 //----------------------------------------------------------------------------------------------------

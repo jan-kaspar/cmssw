@@ -14,7 +14,6 @@
 #include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h"
 
 #include "Geometry/VeryForwardGeometryBuilder/interface/RPAlignmentCorrectionsMethods.h"
-//#include "Alignment/RPTrackBased/interface/AlignmentGeometry.h"
 
 #include <set>
 
@@ -114,9 +113,11 @@ RPAlignmentCorrectionsData RPAlignmentCorrectionsMethods::GetCorrectionsData(DOM
           " children nodes - they will be all ignored.";
     }
 
+    // TODO: add shr2
+
     // default values
-    double sh_r = 0., sh_x = 0., sh_y = 0., sh_z = 0., rot_z = 0.;
-    double sh_r_e = 0., sh_x_e = 0., sh_y_e = 0., sh_z_e = 0., rot_z_e = 0.;
+    double sh_r1 = 0., sh_r2 = 0., sh_x = 0., sh_y = 0., sh_z = 0., rot_z = 0.;
+    double sh_r1_e = 0., sh_r2_e =0., sh_x_e = 0., sh_y_e = 0., sh_z_e = 0., rot_z_e = 0.;
     unsigned int id = 0;
     bool idSet = false;
 
@@ -132,29 +133,33 @@ RPAlignmentCorrectionsData RPAlignmentCorrectionsMethods::GetCorrectionsData(DOM
       {
         id = atoi(XMLString::transcode(a->getNodeValue()));
         idSet = true;
-      } else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_r"))
-          sh_r = atof(XMLString::transcode(a->getNodeValue()));
-        else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_r_e"))
-          sh_r_e = atof(XMLString::transcode(a->getNodeValue()));
-          else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_x"))
-            sh_x = atof(XMLString::transcode(a->getNodeValue()));
-            else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_x_e"))
-              sh_x_e = atof(XMLString::transcode(a->getNodeValue()));
-              else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_y"))
-                sh_y = atof(XMLString::transcode(a->getNodeValue()));
-                else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_y_e"))
-                  sh_y_e = atof(XMLString::transcode(a->getNodeValue()));
-                  else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_z"))
-                    sh_z = atof(XMLString::transcode(a->getNodeValue()));
-                    else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_z_e"))
-                      sh_z_e = atof(XMLString::transcode(a->getNodeValue()));
-                      else if (!strcmp(XMLString::transcode(a->getNodeName()), "rot_z"))
-                        rot_z = atof(XMLString::transcode(a->getNodeValue()));
-                        else if (!strcmp(XMLString::transcode(a->getNodeName()), "rot_z_e"))
-                          rot_z_e = atof(XMLString::transcode(a->getNodeValue()));
-                        else
-                          edm::LogProblem("RPAlignmentCorrectionsMethods") << ">> RPAlignmentCorrectionsMethods::LoadXMLFile > Warning: unknown attribute `"
-                            << XMLString::transcode(a->getNodeName()) << "'.";
+      } else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_r1"))
+          sh_r1 = atof(XMLString::transcode(a->getNodeValue()));
+        else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_r1_e"))
+          sh_r1_e = atof(XMLString::transcode(a->getNodeValue()));
+          else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_r2"))
+              sh_r2 = atof(XMLString::transcode(a->getNodeValue()));
+            else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_r2_e"))
+              sh_r2_e = atof(XMLString::transcode(a->getNodeValue()));
+              else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_x"))
+                sh_x = atof(XMLString::transcode(a->getNodeValue()));
+                else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_x_e"))
+                  sh_x_e = atof(XMLString::transcode(a->getNodeValue()));
+                  else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_y"))
+                    sh_y = atof(XMLString::transcode(a->getNodeValue()));
+                    else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_y_e"))
+                      sh_y_e = atof(XMLString::transcode(a->getNodeValue()));
+                      else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_z"))
+                        sh_z = atof(XMLString::transcode(a->getNodeValue()));
+                        else if (!strcmp(XMLString::transcode(a->getNodeName()), "sh_z_e"))
+                          sh_z_e = atof(XMLString::transcode(a->getNodeValue()));
+                          else if (!strcmp(XMLString::transcode(a->getNodeName()), "rot_z"))
+                            rot_z = atof(XMLString::transcode(a->getNodeValue()));
+                            else if (!strcmp(XMLString::transcode(a->getNodeName()), "rot_z_e"))
+                              rot_z_e = atof(XMLString::transcode(a->getNodeValue()));
+                            else
+                              edm::LogProblem("RPAlignmentCorrectionsMethods") << ">> RPAlignmentCorrectionsMethods::LoadXMLFile > Warning: unknown attribute `"
+                                << XMLString::transcode(a->getNodeName()) << "'.";
     }
 
     // id must be set
@@ -162,7 +167,7 @@ RPAlignmentCorrectionsData RPAlignmentCorrectionsMethods::GetCorrectionsData(DOM
         throw cms::Exception("RPAlignmentCorrectionsMethods") << "Id not set for tag `" << XMLString::transcode(n->getNodeName()) << "'.";
 
     // build alignment
-    RPAlignmentCorrectionData a(sh_r*1E-3, sh_r_e*1E-3, sh_x*1E-3, sh_x_e*1E-3, sh_y*1E-3, sh_y_e*1E-3,
+    RPAlignmentCorrectionData a(sh_r1*1E-3, sh_r1_e*1E-3, sh_r2*1E-3, sh_r2_e*1E-3, sh_x*1E-3, sh_x_e*1E-3, sh_y*1E-3, sh_y_e*1E-3,
       sh_z*1E-3, sh_z_e*1E-3, rot_z*1E-3, rot_z_e*1E-3);
 
     // add the alignment to the right list
@@ -180,55 +185,57 @@ RPAlignmentCorrectionsData RPAlignmentCorrectionsMethods::GetCorrectionsData(DOM
   return result;
 }
 
+//----------------------------------------------------------------------------------------------------
+
 #define WRITE(q, dig, lim) \
   if (precise) \
-    fprintf(f, " " #q "=\"%.15E\"", q()*1E3);\
+    fprintf(f, " " #q "=\"%.15E\"", data.q()*1E3);\
   else \
-    if (fabs(q()*1E3) < lim && q() != 0) \
-      fprintf(f, " " #q "=\"%+8.1E\"", q()*1E3);\
+    if (fabs(data.q()*1E3) < lim && data.q() != 0) \
+      fprintf(f, " " #q "=\"%+8.1E\"", data.q()*1E3);\
     else \
-      fprintf(f, " " #q "=\"%+8." #dig "f\"", q()*1E3);
+      fprintf(f, " " #q "=\"%+8." #dig "f\"", data.q()*1E3);
 
-void RPAlignmentCorrectionsMethods::WriteXML(const RPAlignmentCorrectionData & data, FILE *f, bool precise, bool wrErrors, bool wrSh_r, bool wrSh_xy,
+void RPAlignmentCorrectionsMethods::WriteXML(const RPAlignmentCorrectionData &data, FILE *f, bool precise, bool wrErrors, bool wrSh_r, bool wrSh_xy,
   bool wrSh_z, bool wrRot_z)
 {
   if (wrSh_r)
   {
-    WRITE(data.sh_r1, 2, 0.1);
-    WRITE(data.sh_r2, 2, 0.1);
+    WRITE(sh_r1, 2, 0.1);
+    WRITE(sh_r2, 2, 0.1);
     if (wrErrors)
     {
-      WRITE(data.sh_r1_e, 2, 0.1);
-      WRITE(data.sh_r2_e, 2, 0.1);
+      WRITE(sh_r1_e, 2, 0.1);
+      WRITE(sh_r2_e, 2, 0.1);
     }
   }
 
   if (wrSh_xy)
   {
-    WRITE(data.sh_x, 2, 0.1);
-    WRITE(data.sh_y, 2, 0.1);
+    WRITE(sh_x, 2, 0.1);
+    WRITE(sh_y, 2, 0.1);
     if (wrErrors)
     {
-      WRITE(data.sh_x_e, 2, 0.1);
-      WRITE(data.sh_y_e, 2, 0.1);
+      WRITE(sh_x_e, 2, 0.1);
+      WRITE(sh_y_e, 2, 0.1);
     }
   }
 
   if (wrRot_z)
   {
-    WRITE(data.rot_z, 3, 0.01);
+    WRITE(rot_z, 3, 0.01);
     if (wrErrors)
     {
-      WRITE(data.rot_z_e, 3, 0.01);
+      WRITE(rot_z_e, 3, 0.01);
     }
   }
 
   if (wrSh_z)
   {
-    WRITE(data.sh_z, 2, 0.1);
+    WRITE(sh_z, 2, 0.1);
     if (wrErrors)
     {
-      WRITE(data.sh_z_e, 2, 0.1);
+      WRITE(sh_z_e, 2, 0.1);
     }
   }
 }
@@ -237,8 +244,8 @@ void RPAlignmentCorrectionsMethods::WriteXML(const RPAlignmentCorrectionData & d
 
 //----------------------------------------------------------------------------------------------------
 
-void RPAlignmentCorrectionsMethods::WriteXMLFile(const RPAlignmentCorrectionsData & data, const string &fileName, bool precise, bool wrErrors, bool wrSh_r,
-  bool wrSh_xy, bool wrSh_z, bool wrRot_z)
+void RPAlignmentCorrectionsMethods::WriteXMLFile(const RPAlignmentCorrectionsData & data, const string &fileName,
+  bool precise, bool wrErrors, bool wrSh_r, bool wrSh_xy, bool wrSh_z, bool wrRot_z)
 {
   FILE *rf = fopen(fileName.c_str(), "w");
   if (!rf)
@@ -267,16 +274,19 @@ void RPAlignmentCorrectionsMethods::WriteXMLBlock(const RPAlignmentCorrectionsDa
   RPAlignmentCorrectionsData::mapType sensors = data.GetSensorMap();
   RPAlignmentCorrectionsData::mapType rps = data.GetRPMap();
 
-  for (RPAlignmentCorrectionsData::mapType::const_iterator it = sensors.begin(); it != sensors.end(); ++it) {
+  for (RPAlignmentCorrectionsData::mapType::const_iterator it = sensors.begin(); it != sensors.end(); ++it)
+  {
     // start a RP block
-    unsigned int rp = it->first / 10;
-    if (firstRP || prevRP != rp) {
+    unsigned int rp = CTPPSDetId(it->first).getRPId();
+    if (firstRP || prevRP != rp)
+    {
       if (!firstRP)
         fprintf(rf, "\n");
       firstRP = false;
 
       RPAlignmentCorrectionsData::mapType::const_iterator rit = rps.find(rp);
-      if (rit != rps.end()) {
+      if (rit != rps.end())
+      {
         fprintf(rf, "\t<rp  id=\"%4u\"                                  ", rit->first);
         WriteXML( rit->second , rf, precise, wrErrors, false, wrSh_xy, wrSh_z, wrRot_z );
         fprintf(rf, "/>\n");
@@ -293,9 +303,11 @@ void RPAlignmentCorrectionsMethods::WriteXMLBlock(const RPAlignmentCorrectionsDa
   }
 
   // write remaining RPs
-  for (RPAlignmentCorrectionsData::mapType::const_iterator it = rps.begin(); it != rps.end(); ++it) {
+  for (RPAlignmentCorrectionsData::mapType::const_iterator it = rps.begin(); it != rps.end(); ++it)
+  {
     set<unsigned int>::iterator wit = writtenRPs.find(it->first);
-    if (wit == writtenRPs.end()) {
+    if (wit == writtenRPs.end())
+    {
       fprintf(rf, "\t<rp  id=\"%4u\"                                ", it->first);
       WriteXML(it->second, rf, precise, wrErrors, false, wrSh_xy, wrSh_z, wrRot_z);
       fprintf(rf, "/>\n");

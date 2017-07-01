@@ -94,7 +94,7 @@ public:
       double rot_z, double rot_z_e);
 
   /// constructor TB alignment, shifts in mm, rotation in rad
-  RPAlignmentCorrectionData(double sh_r, double sh_r_e, double sh_x, double sh_x_e, double sh_y, double sh_y_e,
+  RPAlignmentCorrectionData(double sh_r1, double sh_r1_e, double sh_r2, double sh_r2_e, double sh_x, double sh_x_e, double sh_y, double sh_y_e,
       double sh_z, double sh_z_e, double rot_z, double rot_z_e);
 
   /// no error constructor, shifts in mm, rotation in rad
@@ -121,7 +121,9 @@ public:
   } 
 
   RotationMatrix getRotationMatrix() const
-  { return RotationMatrix(ROOT::Math::RotationZYX(rotation_z, rotation_y, rotation_x));}
+  {
+    return RotationMatrix(ROOT::Math::RotationZYX(rotation_z, rotation_y, rotation_x));
+  }
 
   double sh_r1() const
   {
@@ -199,14 +201,13 @@ public:
   void add(const RPAlignmentCorrectionData&, bool sumErrors = true, bool addShR=true,
     bool addShZ=true, bool addRotZ=true);
 
-  /// given (unit-length) readout direction vector (dx, dy), it converts 'translation_r' 
-  /// to x and y components of 'translation'
-  void readoutTranslationToXY(double dx, double dy);
+  /// given the readout directions, it transforms 'translation_r1' and 'translation_r2'
+  /// to the transverse components (x, y) of 'translation'
+  void readoutTranslationsToXY(double d1x, double d1y, double d2x, double d2y);
   
-  /// given (unit-length) readout direction vector (dx, dy), it removes the translation
-  /// component perpendicular to the r-o direction, the parallel component is saved in
-  /// 'translation_r'
-  void xyTranslationToReadout(double dx, double dy);
+  /// given the readout directions, it transforms transverse components (x, y) of 'translation'
+  /// to 'translation_r1' and 'translation_r2'
+  void xyTranslationToReadout(double d1x, double d1y, double d2x, double d2y);
 
   /// adds a multiple of 2pi, such that the rotation is then in range (-pi, +pi)
   void normalizeRotationZ();
