@@ -136,9 +136,9 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
   // fill fit matrix and Gamma matrices
   unsigned int j = 0;
   
-  for (HitCollection::const_iterator it = selection.begin(); it != selection.end(); ++it, ++j)
+  for (HitCollection::const_iterator hit = selection.begin(); hit != selection.end(); ++hit, ++j)
   {
-    unsigned int id = it->id;
+    unsigned int id = hit->id;
 
     // skip hits that don't have associated geometry record
     auto git = task->geometry.find(id);
@@ -146,21 +146,21 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
       continue;
   
     DetGeometry &d = git->second;
-    const auto &dirData = d.GetDirectionData(it->dirIdx);
+    const auto &dirData = d.GetDirectionData(hit->dirIdx);
 
-    A(j, 0) = it->z * dirData.dx;
+    A(j, 0) = hit->z * dirData.dx;
     A(j, 1) = dirData.dx;
-    A(j, 2) = it->z * dirData.dy;
+    A(j, 2) = hit->z * dirData.dy;
     A(j, 3) = dirData.dy;
 
-    m(j) = it->position + dirData.s;  // in mm
+    m(j) = hit->position + dirData.s;  // in mm
 
-    Vi(j, j) = 1. / it->sigma / it->sigma;
+    Vi(j, j) = 1. / hit->sigma / hit->sigma;
 
     double C = dirData.dx, S = dirData.dy;
     
-    double hx = hax * it->z + hbx;        // in mm
-    double hy = hay * it->z + hby;
+    double hx = hax * hit->z + hbx;        // in mm
+    double hy = hay * hit->z + hby;
     double R = m(j) - (hx*C + hy*S);    // (standard) residual
 
     //printf("%i\t%i\t%i\t%.3f\n", j, id, idx, measVec[j]);
@@ -176,15 +176,16 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
       switch (task->quantityClasses[i])
       {
         case AlignmentTask::qcShR:
-          Ga[i][j][d.matrixIndex] = -1.; break;
-        case AlignmentTask::qcShZ:
-          Ga[i][j][d.matrixIndex] = hax*C + hay*S; break;
-        case AlignmentTask::qcRPShZ:  // TODO: remove this option
-          //Ga[i][j][d.rpMatrixIndex] = hax*C + hay*S;
+          Ga[i][j][d.matrixIndex] = -1.;
           break;
+
+        case AlignmentTask::qcShZ:
+          Ga[i][j][d.matrixIndex] = hax*C + hay*S;
+          break;
+
         case AlignmentTask::qcRotZ:
-          // TODO: using d.z is not correct for pixels: depending on track parameters, the z of impact point may vary in the order of mm's
-          Ga[i][j][d.matrixIndex] = (hax*it->z + hbx - d.sx)*(-S) + (hay*it->z + hby - d.sy)*C; break;
+          Ga[i][j][d.matrixIndex] = (hax*hit->z + hbx - d.sx)*(-S) + (hay*hit->z + hby - d.sy)*C;
+          break;
       }
 
       if (buildDiagnosticPlots)
@@ -196,16 +197,16 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
 
         if (task->quantityClasses[i] == AlignmentTask::qcRotZ)
         {
-          map< set<unsigned int>, ScatterPlot>::iterator it = s.resVsCoefRot_perRPSet.find(rpSet);
-          if (it == s.resVsCoefRot_perRPSet.end())
+          map< set<unsigned int>, ScatterPlot>::iterator hit = s.resVsCoefRot_perRPSet.find(rpSet);
+          if (hit == s.resVsCoefRot_perRPSet.end())
           {
             ScatterPlot sp;
             sp.g = new TGraph();
             sp.h = new TH2D("", "", 40, -20., +20., 60, -0.15, +0.15);
-            it = s.resVsCoefRot_perRPSet.insert(pair< set<unsigned int>, ScatterPlot>(rpSet, sp)).first;
+            hit = s.resVsCoefRot_perRPSet.insert(pair< set<unsigned int>, ScatterPlot>(rpSet, sp)).first;
           }
-          it->second.g->SetPoint(it->second.g->GetN(), c, R);
-          it->second.h->Fill(c, R);
+          hit->second.g->SetPoint(hit->second.g->GetN(), c, R);
+          hit->second.h->Fill(c, R);
         }
       }
     }
@@ -615,23 +616,26 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
   // fill results
   unsigned int offset = 0;
   vector<unsigned int> offsets;
-  for (unsigned int i = 0; i < task->quantityClasses.size(); i++) {
+  for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
+  {
     offsets.push_back(offset);
     offset += Mc[i].GetNrows();
   }
 
-  for (AlignmentGeometry::const_iterator dit = task->geometry.begin(); dit != task->geometry.end(); ++dit) {
+  for (AlignmentGeometry::const_iterator dit = task->geometry.begin(); dit != task->geometry.end(); ++dit)
+  {
     RPAlignmentCorrectionData r;
 
-    for (unsigned int i = 0; i < task->quantityClasses.size(); i++) {
+    for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
+    {
       unsigned idx = dit->second.matrixIndex;
       unsigned int fi = offsets[i] + idx;
       double v = AL[fi];
       double e = sqrt(EM[fi][fi]);
-      switch (task->quantityClasses[i]) {
+      switch (task->quantityClasses[i])
+      {
         case AlignmentTask::qcShR: r.setTranslationR(v, e); break;
         case AlignmentTask::qcShZ: r.setTranslationZ(v, e); break;
-        case AlignmentTask::qcRPShZ: r.setTranslationZ(v, e); break;
         case AlignmentTask::qcRotZ: r.setRotationZ(v, e); break;
       }
     }
@@ -640,7 +644,8 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
   }
 
   // save matrices, eigen data, ...
-  if (dir) {
+  if (dir)
+  {
     dir->cd();
 
     S.Write("S");

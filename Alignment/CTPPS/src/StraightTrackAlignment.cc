@@ -439,6 +439,8 @@ void StraightTrackAlignment::ProcessEvent(const DetSetVector<TotemRPRecHit> &hit
   // is it an additional accepted RP set?
   if (find(additionalAcceptedRPSets.begin(), additionalAcceptedRPSets.end(), selectedRPs) != additionalAcceptedRPSets.end())
     rp_set_accepted = true;
+#endif
+  bool rp_set_accepted = true;
 
   bool selected = rp_set_accepted;
 
@@ -450,7 +452,7 @@ void StraightTrackAlignment::ProcessEvent(const DetSetVector<TotemRPRecHit> &hit
   if (fabs(trackFit.ax) > maxTrackAx || fabs(trackFit.ay) > maxTrackAy)
     selected = false;
 
-  UpdateDiagnosticHistograms(selection, selectedRPs, trackFit, selected);
+  UpdateDiagnosticHistograms(hitSelection, selectedRPs, trackFit, selected);
 
   if (verbosity > 5)
     printf("* SELECTED: %u\n", selected);
@@ -460,15 +462,11 @@ void StraightTrackAlignment::ProcessEvent(const DetSetVector<TotemRPRecHit> &hit
   
   eventsSelected++;
   selectedTracksPerRPSet[selectedRPs]++;
-#endif
   
   // -------------------- STEP 4: FEED ALGORITHMS
 
-// TODO
-#if 0
-  for (vector<AlignmentAlgorithm *>::iterator it = algorithms.begin(); it != algorithms.end(); ++it)
-    (*it)->Feed(selection, trackFit);
-#endif
+  for (auto &a : algorithms)
+    a->Feed(hitSelection, trackFit);
 
   // -------------------- STEP 5: ENOUGH TRACKS?
 

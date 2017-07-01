@@ -26,26 +26,25 @@ AlignmentTask::AlignmentTask(const ParameterSet& ps) :
   resolveShR(ps.getParameter<bool>("resolveShR")),
   resolveShZ(ps.getParameter<bool>("resolveShZ")),
   resolveRotZ(ps.getParameter<bool>("resolveRotZ")),
-  resolveRPShZ(ps.getParameter<bool>("resolveRPShZ")),
-  oneRotZPerPot(ps.getParameter<bool>("oneRotZPerPot")),
 
   useExtendedRotZConstraint(ps.getParameter<bool>("useExtendedRotZConstraint")),
   useZeroThetaRotZConstraint(ps.getParameter<bool>("useZeroThetaRotZConstraint")),
   useExtendedShZConstraints(ps.getParameter<bool>("useExtendedShZConstraints")),
-  useExtendedRPShZConstraint(ps.getParameter<bool>("useExtendedRPShZConstraint")),
   useEqualMeanUMeanVRotZConstraint(ps.getParameter<bool>("useEqualMeanUMeanVRotZConstraint")),
+  oneRotZPerPot(ps.getParameter<bool>("oneRotZPerPot")),
 
   homogeneousConstraints(ps.getParameterSet("homogeneousConstraints")),
   fixedDetectorsConstraints(ps.getParameterSet("fixedDetectorsConstraints")),
   standardConstraints(ps.getParameterSet("standardConstraints"))
 {
-  if (resolveShZ && resolveRPShZ)
-    throw cms::Exception("AlignmentTask::AlignmentTask") << "resolveShZ and resolveRPShZ cannot be both set to True.";
+  if (resolveShR)
+    quantityClasses.push_back(qcShR);
 
-  if (resolveShR) quantityClasses.push_back(qcShR);
-  if (resolveShZ) quantityClasses.push_back(qcShZ);
-  if (resolveRPShZ) quantityClasses.push_back(qcRPShZ);
-  if (resolveRotZ) quantityClasses.push_back(qcRotZ);
+  if (resolveShZ)
+    quantityClasses.push_back(qcShZ);
+
+  if (resolveRotZ)
+    quantityClasses.push_back(qcRotZ);
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -104,10 +103,10 @@ void AlignmentTask::BuildGeometry(const vector<unsigned int> &rpDecIds,
 
 string AlignmentTask::QuantityClassTag(QuantityClass qc)
 {
-  switch (qc) {
+  switch (qc)
+  {
     case qcShR: return "ShR"; 
     case qcShZ: return "ShZ"; 
-    case qcRPShZ: return "RPShZ"; 
     case qcRotZ: return "RotZ"; 
   }
 
@@ -119,7 +118,6 @@ string AlignmentTask::QuantityClassTag(QuantityClass qc)
 unsigned int AlignmentTask::QuantitiesOfClass(QuantityClass qc)
 {
   // TODO
-  //return (qc == qcRPShZ) ? geometry.RPs() : geometry.Detectors();
   return geometry.Detectors();
 }
 
@@ -127,10 +125,10 @@ unsigned int AlignmentTask::QuantitiesOfClass(QuantityClass qc)
 
 unsigned int AlignmentTask::ConstraintsForClass(QuantityClass qc)
 {
-  switch (qc) {
+  switch (qc)
+  {
     case qcShR: return 4; 
     case qcShZ: return (useExtendedShZConstraints) ? 4 : 2;
-    case qcRPShZ: return (useExtendedRPShZConstraint) ? 2 : 1; 
     case qcRotZ:
       if (oneRotZPerPot)
       {
@@ -558,4 +556,6 @@ void AlignmentTask::BuildStandardConstraints(vector<AlignmentConstraint> &constr
     }  
   }
 #endif
+ 
+  // TODO: when oneRotZPerPot=true, make use of BuildOneRotZPerPotConstraints(constraints) ??
 }

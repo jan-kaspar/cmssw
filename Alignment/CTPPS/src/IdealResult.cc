@@ -246,7 +246,6 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
     {
       case AlignmentTask::qcShR: Fc = &F_ShR; break;
       case AlignmentTask::qcShZ: Fc = &F_ShZ; break;
-      case AlignmentTask::qcRPShZ: Fc = NULL; break;  // TODO: remove
       case AlignmentTask::qcRotZ: continue;
     }
 
@@ -352,7 +351,6 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
       {
         case AlignmentTask::qcShR: r.setTranslationR(v); break;
         case AlignmentTask::qcShZ: r.setTranslationZ(v); break;
-        case AlignmentTask::qcRPShZ: r.setTranslationZ(v); break;
         case AlignmentTask::qcRotZ: r.setRotationZ(v); break;
       }
     }
