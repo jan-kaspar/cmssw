@@ -155,7 +155,7 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
     A(j, 2) = hit->z * dirData.dy;
     A(j, 3) = dirData.dy;
 
-    m(j) = hit->position + dirData.s;  // in mm
+    m(j) = hit->position + dirData.s - (hit->z - d.z) * dirData.dz;  // in mm
 
     Vi(j, j) = 1. / hit->sigma / hit->sigma;
 
