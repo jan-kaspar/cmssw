@@ -284,6 +284,9 @@ void StraightTrackAlignment::Begin(const EventSetup &es)
   es.get<VeryForwardRealGeometryRecord>().get(hGeometry);
   task.BuildGeometry(rpIds, excludePlanes, hGeometry.product(), z0, task.geometry);  
 
+  // build matrix index mappings
+  task.BuildIndexMaps();
+
   // print geometry info
   if (verbosity > 1)
     task.geometry.Print();
@@ -640,8 +643,8 @@ void StraightTrackAlignment::Finish()
   SaveDiagnostics();
 
   // run analysis
-  for (vector<AlignmentAlgorithm *>::iterator it = algorithms.begin(); it != algorithms.end(); ++it)
-    (*it)->Analyze();
+  for (auto a : algorithms)
+    a->Analyze();
 
   // build constraints
   vector<AlignmentConstraint> constraints;
@@ -659,21 +662,21 @@ void StraightTrackAlignment::Finish()
 
   // solve
   vector<RPAlignmentCorrectionsData> results;
-  for (vector<AlignmentAlgorithm *>::iterator it = algorithms.begin(); it != algorithms.end(); ++it)
+  for (auto algorithm : algorithms)
   {
     TDirectory *dir = NULL;
     if (taskDataFile && saveIntermediateResults)
-      dir = taskDataFile->mkdir(((*it)->GetName() + "_data").c_str());
+      dir = taskDataFile->mkdir((algorithm->GetName() + "_data").c_str());
 
     results.resize(results.size() + 1);
-    unsigned int rf = (*it)->Solve(constraints, results.back(), dir);
+    unsigned int rf = algorithm->Solve(constraints, results.back(), dir);
 
     if (rf)
-      throw cms::Exception("StraightTrackAlignment") << "The Solve method of `" << (*it)->GetName() 
+      throw cms::Exception("StraightTrackAlignment") << "The Solve method of `" << algorithm->GetName() 
         << "' algorithm has failed (return value " << rf << ").";
   }
 
-  // print
+  // print results
   printf("\n>> StraightTrackAlignment::Finish > Print\n");
 
   PrintLineSeparator(results);
@@ -682,29 +685,29 @@ void StraightTrackAlignment::Finish()
 
   signed int prevRPId = -1;
 
-  for (AlignmentGeometry::const_iterator dit = task.geometry.begin(); dit != task.geometry.end(); ++dit)
+  for (const auto &dit : task.geometry)
   {
     //  ═ ║ 
 
-    signed int rpId = CTPPSDetId(dit->first).getRPId();
+    signed int rpId = CTPPSDetId(dit.first).getRPId();
     if (rpId != prevRPId)
       PrintLineSeparator(results);
     prevRPId = rpId;
 
-    PrintId(dit->first);
+    PrintId(dit.first);
     printf(" ║");
 
     for (unsigned int q = 0; q < task.quantityClasses.size(); q++)
     {
       for (unsigned int a = 0; a < results.size(); a++)
       {
-        RPAlignmentCorrectionsData::mapType::const_iterator it = results[a].sensors.find(dit->first);
+        RPAlignmentCorrectionsData::mapType::const_iterator it = results[a].sensors.find(dit.first);
         if (it == results[a].sensors.end())
         {
           if (algorithms[a]->HasErrorEstimate())
-            printf("%18s", "----│");
+            printf("%21s", "----║");
           else
-            printf("%8s", "----│");
+            printf("%10s", "----║");
           continue;
         }
 
@@ -712,7 +715,8 @@ void StraightTrackAlignment::Finish()
         double v = 0., e = 0.;
         switch (task.quantityClasses[q])
         {
-          case AlignmentTask::qcShR: v = ac.sh_r();   e = ac.sh_r_e(); break;
+          case AlignmentTask::qcShR1: v = ac.sh_r1(); e = ac.sh_r1_e(); break;
+          case AlignmentTask::qcShR2: v = ac.sh_r2(); e = ac.sh_r2_e(); break;
           case AlignmentTask::qcShZ: v = ac.sh_z(); e = ac.sh_z_e(); break;
           case AlignmentTask::qcRotZ: v = ac.rot_z(); e = ac.rot_z_e(); break;
         }

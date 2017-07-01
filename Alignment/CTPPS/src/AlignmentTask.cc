@@ -38,13 +38,20 @@ AlignmentTask::AlignmentTask(const ParameterSet& ps) :
   standardConstraints(ps.getParameterSet("standardConstraints"))
 {
   if (resolveShR)
-    quantityClasses.push_back(qcShR);
+  {
+    quantityClasses.push_back(qcShR1);
+    quantityClasses.push_back(qcShR2);
+  }
 
   if (resolveShZ)
+  {
     quantityClasses.push_back(qcShZ);
+  }
 
   if (resolveRotZ)
+  {
     quantityClasses.push_back(qcRotZ);
+  }
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -90,13 +97,145 @@ void AlignmentTask::BuildGeometry(const vector<unsigned int> &rpDecIds,
     dg.SetDirection(2, d2.x(), d2.y(), d2.z());
     geometry.Insert(it->first, dg);
   }
+}
 
-  // set matrix and rpMatrix indeces
-  unsigned int index = 0;
-  for (AlignmentGeometry::iterator it = geometry.begin(); it != geometry.end(); ++it, ++index)
+//----------------------------------------------------------------------------------------------------
+
+void AlignmentTask::BuildIndexMaps()
+{
+  // remove old mapping
+  mapMeasurementIndeces.clear();
+  mapQuantityIndeces.clear();
+
+  // loop over all classes
+  for (const auto &qcl : quantityClasses)
   {
-    it->second.matrixIndex = index;
+    // create entry for this class
+    mapMeasurementIndeces[qcl];
+
+    // loop over all sensors
+    unsigned int idxMeas = 0;
+    unsigned int idxQuan = 0;
+    for (const auto &git : geometry)
+    {
+      const unsigned int detId = git.first;
+      const unsigned int subdetId = CTPPSDetId(git.first).subdetId();
+
+      // update measurement map
+      if (qcl == qcShR1)
+      {
+        if (subdetId == CTPPSDetId::sdTimingDiamond) mapMeasurementIndeces[qcl][{detId, 1}] = idxMeas++;
+        if (subdetId == CTPPSDetId::sdTrackingPixel) mapMeasurementIndeces[qcl][{detId, 1}] = idxMeas++;
+      }
+
+      if (qcl == qcShR2)
+      {
+        if (subdetId == CTPPSDetId::sdTrackingStrip) mapMeasurementIndeces[qcl][{detId, 2}] = idxMeas++;
+        if (subdetId == CTPPSDetId::sdTrackingPixel) mapMeasurementIndeces[qcl][{detId, 2}] = idxMeas++;
+      }
+
+      if (qcl == qcShZ)
+      {
+        if (subdetId == CTPPSDetId::sdTrackingStrip) mapMeasurementIndeces[qcl][{detId, 2}] = idxMeas++;
+        if (subdetId == CTPPSDetId::sdTrackingPixel) mapMeasurementIndeces[qcl][{detId, 1}] = idxMeas++;
+        if (subdetId == CTPPSDetId::sdTrackingPixel) mapMeasurementIndeces[qcl][{detId, 2}] = idxMeas++;
+        if (subdetId == CTPPSDetId::sdTimingDiamond) mapMeasurementIndeces[qcl][{detId, 1}] = idxMeas++;
+      }
+
+      if (qcl == qcRotZ)
+      {
+        if (subdetId == CTPPSDetId::sdTrackingStrip) mapMeasurementIndeces[qcl][{detId, 2}] = idxMeas++;
+        if (subdetId == CTPPSDetId::sdTrackingPixel) mapMeasurementIndeces[qcl][{detId, 1}] = idxMeas++;
+        if (subdetId == CTPPSDetId::sdTrackingPixel) mapMeasurementIndeces[qcl][{detId, 2}] = idxMeas++;
+        if (subdetId == CTPPSDetId::sdTimingDiamond) mapMeasurementIndeces[qcl][{detId, 1}] = idxMeas++;
+      }
+
+      // update quantity map
+      if (qcl == qcShR1)
+      {
+        if (subdetId == CTPPSDetId::sdTimingDiamond) mapQuantityIndeces[qcl][detId] = idxQuan++;
+        if (subdetId == CTPPSDetId::sdTrackingPixel) mapQuantityIndeces[qcl][detId] = idxQuan++;
+      }
+
+      if (qcl == qcShR2)
+      {
+        if (subdetId == CTPPSDetId::sdTrackingStrip) mapQuantityIndeces[qcl][detId] = idxQuan++;
+        if (subdetId == CTPPSDetId::sdTrackingPixel) mapQuantityIndeces[qcl][detId] = idxQuan++;
+      }
+
+      if (qcl == qcShZ)
+      {
+        if (subdetId == CTPPSDetId::sdTrackingStrip) mapQuantityIndeces[qcl][detId] = idxQuan++;
+        if (subdetId == CTPPSDetId::sdTimingDiamond) mapQuantityIndeces[qcl][detId] = idxQuan++;
+        if (subdetId == CTPPSDetId::sdTrackingPixel) mapQuantityIndeces[qcl][detId] = idxQuan++;
+      }
+
+      if (qcl == qcRotZ)
+      {
+        if (subdetId == CTPPSDetId::sdTrackingStrip) mapQuantityIndeces[qcl][detId] = idxQuan++;
+        if (subdetId == CTPPSDetId::sdTimingDiamond) mapQuantityIndeces[qcl][detId] = idxQuan++;
+        if (subdetId == CTPPSDetId::sdTrackingPixel) mapQuantityIndeces[qcl][detId] = idxQuan++;
+      }
+    }
   }
+
+  // TODO
+  if (true)
+  {
+    printf(">> AlignmentTask::BuildIndexMaps > measurement indeces\n");
+
+    for (const auto &cli : mapMeasurementIndeces)
+    {
+      printf("class %u\n", cli.first);
+    
+      for (const auto &it : cli.second)
+      {
+        printf("    detId=%u, dirIdx=%u --> matrixIndex=%u\n", it.first.detId, it.first.dirIdx, it.second);
+      }
+    }
+
+    printf(">> AlignmentTask::BuildIndexMaps > quantity indeces\n");
+
+    for (const auto &cli : mapQuantityIndeces)
+    {
+      printf("class %u\n", cli.first);
+    
+      for (const auto &it : cli.second)
+      {
+        printf("    detId=%u --> matrixIndex=%u\n", it.first, it.second);
+      }
+    }
+  }
+}
+
+//----------------------------------------------------------------------------------------------------
+
+signed int AlignmentTask::GetMeasurementIndex(QuantityClass cl, unsigned int detId, unsigned int dirIdx) const
+{
+  auto clit = mapMeasurementIndeces.find(cl);
+  if (clit == mapMeasurementIndeces.end())
+    return -1;
+
+  auto it = clit->second.find({detId, dirIdx});
+  if (it == clit->second.end())
+    return -1;
+
+  return it->second;
+}
+
+//----------------------------------------------------------------------------------------------------
+
+signed int AlignmentTask::GetQuantityIndex(QuantityClass cl, unsigned int detId) const
+{
+  auto clit = mapQuantityIndeces.find(cl);
+  if (clit == mapQuantityIndeces.end())
+    return -1;
+
+  auto it = clit->second.find(detId);
+  if (it == clit->second.end())
+    return -1;
+
+  return it->second;
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -105,9 +244,10 @@ string AlignmentTask::QuantityClassTag(QuantityClass qc) const
 {
   switch (qc)
   {
-    case qcShR: return "ShR"; 
-    case qcShZ: return "ShZ"; 
-    case qcRotZ: return "RotZ"; 
+    case qcShR1: return "ShR1";
+    case qcShR2: return "ShR2";
+    case qcShZ: return "ShZ";
+    case qcRotZ: return "RotZ";
   }
 
   throw cms::Exception("AlignmentTask::QuantityClassTag") << "Unknown quantity class " << qc << ".";
@@ -115,33 +255,18 @@ string AlignmentTask::QuantityClassTag(QuantityClass qc) const
 
 //----------------------------------------------------------------------------------------------------
 
-unsigned int AlignmentTask::QuantitiesOfClass(QuantityClass qc) const
+unsigned int AlignmentTask::MeasurementsOfClass(QuantityClass qc) const
 {
-  // TODO
-  return geometry.Detectors();
+  auto it = mapMeasurementIndeces.find(qc);
+  return it->second.size();
 }
 
 //----------------------------------------------------------------------------------------------------
 
-unsigned int AlignmentTask::ConstraintsForClass(QuantityClass qc) const
+unsigned int AlignmentTask::QuantitiesOfClass(QuantityClass qc) const
 {
-  switch (qc)
-  {
-    case qcShR: return 4; 
-    case qcShZ: return (useExtendedShZConstraints) ? 4 : 2;
-    case qcRotZ:
-      if (oneRotZPerPot)
-      {
-        return 9*geometry.RPs() + 1;
-      } else {
-        unsigned int count = (useZeroThetaRotZConstraint) ? 2 : 1;
-        if (useExtendedRotZConstraint)
-          count *= 2;
-        return count;
-      }
-  }
-
-  throw cms::Exception("AlignmentTask::ConstraintsForClass") << "Unknown quantity class " << qc << ".";
+  auto it = mapQuantityIndeces.find(qc);
+  return it->second.size();
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -251,70 +376,63 @@ void AlignmentTask::BuildHomogeneousConstraints(vector<AlignmentConstraint> &con
 
 void AlignmentTask::BuildFixedDetectorsConstraints(vector<AlignmentConstraint> &constraints) const
 {
-  // TODO
-  //printf(">> AlignmentTask::BuildFixedDetectorsConstraints > not yet ported.\n");
-  //throw 1;
-
-  for (unsigned int cl = 0; cl < quantityClasses.size(); cl++)
+  for (auto &quantityClass : quantityClasses)
   {
-    const string &tag = QuantityClassTag(quantityClasses[cl]);
-
-    unsigned int basicNumber = 0;
-    switch (quantityClasses[cl])
-    {
-      case qcShR: basicNumber = 4; break;
-      case qcRotZ: basicNumber = 1; break;
-      case qcShZ: basicNumber = 2; break;
-    }
+    // get input
+    const string &tag = QuantityClassTag(quantityClass);
 
     const ParameterSet &classSettings = fixedDetectorsConstraints.getParameterSet(tag.c_str());
-    vector<unsigned int> ids(classSettings.getParameter< vector<unsigned int> >("ids"));
+    vector<unsigned int> ids(classSettings.getParameter<vector<unsigned int>>("ids"));
     vector<double> values(classSettings.getParameter< vector<double> >("values"));
 
     if (ids.size() != values.size())
       throw cms::Exception("AlignmentTask::BuildFixedDetectorsConstraints") << 
         "Different number of constraint ids and values for " << tag << ".";
     
-    unsigned int size = ConstraintsForClass(quantityClasses[cl]);
+    // determine number of constraints
+    unsigned int size = ids.size();
     
     // just one basic constraint
-    if (oneRotZPerPot && quantityClasses[cl] == qcRotZ)
-      size = 1;
+    if (oneRotZPerPot && quantityClass == qcRotZ)
+    {
+      if (size > 1)
+        size = 1;
+    }
     
-    if (ids.size() < size)
-      throw cms::Exception("AlignmentTask::BuildFixedDetectorsConstraints") << 
-        "Too few constrainted ids for " << tag << ". Given " << ids.size() <<
-        ", while " << size << " expected.";
-    
+    // build constraints
     for (unsigned int j = 0; j < size; j++)
     {
+      // prepare empty constraint
       AlignmentConstraint ac;
-      ac.forClass = quantityClasses[cl];
-      for (unsigned int i = 0; i < quantityClasses.size(); i++)
-      {
-        ac.coef[quantityClasses[i]].ResizeTo(QuantitiesOfClass(quantityClasses[i]));
-        ac.coef[quantityClasses[i]].Zero();
-      }
-      ac.val = values[j] * 1E-3;
-      ac.extended = (j >= basicNumber);
+      ac.forClass = quantityClass;
+      ac.extended = false;
 
+      for (auto &qcit : quantityClasses)
+      {
+        ac.coef[qcit].ResizeTo(QuantitiesOfClass(qcit));
+        ac.coef[qcit].Zero();
+      }
+
+      // set constraint name
       char buf[40];
       sprintf(buf, "%s: fixed plane %4u", tag.c_str(), ids[j]);
       ac.name = buf;
 
-      // is the detector in geometry?
-      if (!geometry.ValidSensorId(ids[j]))
+      // get quantity index
+      signed int qIndex = GetQuantityIndex(quantityClass, ids[j]);
+      if (qIndex < 0)
         throw cms::Exception("AlignmentTask::BuildFixedDetectorsConstraints") <<
-          "Detector with id " << ids[j] << " is not in the geometry.";
+          "Quantity index for class " << quantityClass << " and id " << ids[j] << " is " << qIndex;
+      
+      // set constraint coefficient and value
+      ac.coef[quantityClass][qIndex] = 1.;
+      ac.val = values[j] * 1E-3;
 
-      const auto git = geometry.find(ids[j]);
-      unsigned int idx = git->second.matrixIndex;
-      ac.coef[quantityClasses[cl]][idx] = 1.;
-
+      // save constraint
       constraints.push_back(ac);
     }
     
-    if (oneRotZPerPot && quantityClasses[cl] == qcRotZ)
+    if (oneRotZPerPot && quantityClass == qcRotZ)
         BuildOneRotZPerPotConstraints(constraints);
   }
 }
@@ -364,6 +482,8 @@ void AlignmentTask::BuildOneRotZPerPotConstraints(std::vector<AlignmentConstrain
 void AlignmentTask::BuildStandardConstraints(vector<AlignmentConstraint> &constraints) const
 {
   // TODO
+  printf(">> AlignmentTask::BuildStandardConstraints > not yet ported\n");
+  throw 1;
 
 #if 0
   const vector<unsigned int> &units = standardConstraints.getParameter<vector<unsigned int>>("units");

@@ -22,7 +22,7 @@ ctppsStraightTrackAligner = cms.EDAnalyzer("CTPPSStraightTrackAligner",
 
     # ---------- event selection ----------
 
-    # TODO: describe
+    # parameters of hit outlier removal
     maxResidualToSigma = cms.double(3),
     minimumHitsPerProjectionPerRP = cms.uint32(4),
 
@@ -107,7 +107,6 @@ ctppsStraightTrackAligner = cms.EDAnalyzer("CTPPSStraightTrackAligner",
     resolveShR = cms.bool(True),
     resolveShZ = cms.bool(False),
     resolveRotZ = cms.bool(False),
-    resolveRPShZ = cms.bool(False),
 
     # suitable value for station alignment
     singularLimit = cms.double(1E-8),

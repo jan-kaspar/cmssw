@@ -52,6 +52,8 @@ vector<SingularMode> IdealResult::Analyze()
 unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constraints,
   RPAlignmentCorrectionsData &result, TDirectory *dir)
 {
+// TODO
+/*
   printf(">> IdealResult::Solve\n\tvalues in mm and rad\n");
   result.Clear();
 
@@ -359,6 +361,7 @@ unsigned int IdealResult::Solve(const std::vector<AlignmentConstraint> &constrai
   }
 
   printf("dupa end\n");
+*/
 
   return 0;
 }

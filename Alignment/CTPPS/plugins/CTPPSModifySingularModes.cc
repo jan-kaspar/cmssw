@@ -132,7 +132,8 @@ void CTPPSModifySingularModes::beginRun(edm::Run const&, edm::EventSetup const& 
     //printf("\t\t %E, %E\n", inc_s, inc_rho);
     
     RPAlignmentCorrectionData &ac = output.GetSensorCorrection(it->first);
-    ac.setTranslationR(ac.sh_r() + inc_s, ac.sh_r_e());
+    ac.setTranslationR1(ac.sh_r1() + inc_s, ac.sh_r1_e());
+    // TODO: what about translation 2
     ac.setRotationZ(ac.rot_z() + inc_rho, ac.rot_z_e());
     ac.readoutTranslationToXY(dx, dy);
   }

@@ -29,44 +29,14 @@ void AlignmentGeometry::Insert(unsigned int id, const DetGeometry &g)
 
 //----------------------------------------------------------------------------------------------------
 
-// TODO: remove
-/*
-unsigned int AlignmentGeometry::MatrixIndexToDetId(unsigned int mi) const
-{
-  const_iterator it = FindByMatrixIndex(mi);
-  if (it != end())
-  {
-    return it->first;
-  } else {
-    LogProblem("AlignmentGeometry") << ">> AlignmentGeometry::MatrixIndexToDetId > No detector corresponds to matrix index "
-      << mi << ".";
-    return 0;
-  }
-}
-*/
-
-//----------------------------------------------------------------------------------------------------
-
-AlignmentGeometry::const_iterator AlignmentGeometry::FindByMatrixIndex(unsigned int mi) const
-{
-  for (const_iterator it = begin(); it != end(); ++it)
-  {
-    if (it->second.matrixIndex == mi)
-      return it;
-  }
-  return end();
-}
-
-//----------------------------------------------------------------------------------------------------
-
 void AlignmentGeometry::Print() const
 {
   for (const_iterator it = begin(); it != end(); ++it) 
   {
     PrintId(it->first);
 
-    printf(" [%2u] z = %+10.4f mm │ shift: x = %+7.3f mm, y = %+7.3f mm │ ",
-        it->second.matrixIndex, it->second.z,
+    printf(" z = %+10.4f mm │ shift: x = %+7.3f mm, y = %+7.3f mm │ ",
+        it->second.z,
         it->second.sx, it->second.sy);
 
     for (const auto &dit : it->second.directionData)

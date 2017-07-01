@@ -78,8 +78,8 @@ class AlignmentTask
     /// quantity classes
     enum QuantityClass
     {
-      // TODO: change to ShR1, ShR2
-      qcShR,    ///< detector shifts in readout direction
+      qcShR1,   ///< detector shifts in first readout direction
+      qcShR2,   ///< detector shifts in second readout direction
       qcShZ,    ///< detector shifts in z
       qcRotZ,   ///< detector rotations around z
     };
@@ -90,17 +90,48 @@ class AlignmentTask
     /// returns a string tag for the given quantity class
     std::string QuantityClassTag(QuantityClass) const;
 
+    struct DetIdDirIdxPair
+    {
+      unsigned int detId;
+      unsigned int dirIdx;
+    
+      bool operator< (const DetIdDirIdxPair &other) const
+      {
+        if (detId < other.detId)
+          return true;
+        if (detId > other.detId)
+          return false;
+        if (dirIdx < other.dirIdx)
+          return true;
+
+        return false;
+      }
+    };
+
+    /// for each quantity class contains mapping (detector id, direction) --> measurement index
+    std::map<QuantityClass, std::map<DetIdDirIdxPair, unsigned int>> mapMeasurementIndeces;
+
+    /// for each quantity class contains mapping detector id --> quantity index
+    std::map<QuantityClass, std::map<unsigned int, unsigned int>> mapQuantityIndeces;
+
+    /// builds "mapMatrixIndeces" from "geometry"
+    void BuildIndexMaps();
+
+    /// returns the number of quantities of the given class
+    unsigned int MeasurementsOfClass(QuantityClass) const;
+
     /// returns the number of quantities of the given class
     unsigned int QuantitiesOfClass(QuantityClass) const;
 
-    // TODO: add matrixIndex mappings and methods
+    /// returns measurement index (if non-existent, returns -1)
+    signed int GetMeasurementIndex(QuantityClass cl, unsigned int detId, unsigned int dirIdx) const;
+
+    /// returns measurement index (if non-existent, returns -1)
+    signed int GetQuantityIndex(QuantityClass cl, unsigned int detId) const;
 
 
     // -------------------- constraint-related members --------------------
 
-    /// returns the number of constraints of the given class
-    unsigned int ConstraintsForClass(QuantityClass) const;
-    
     /// builds a set of homogeneous constraints
     void BuildHomogeneousConstraints(std::vector<AlignmentConstraint>&) const;
     

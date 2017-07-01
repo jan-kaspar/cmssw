@@ -175,24 +175,32 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
 
     for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
     {
+      signed int matrixIndex = task->GetMeasurementIndex(task->quantityClasses[i], hit->id, hit->dirIdx);
+      if (matrixIndex < 0)
+        continue;
+
       switch (task->quantityClasses[i])
       {
-        case AlignmentTask::qcShR:
-          Ga[i][j][d.matrixIndex] = -1.;
+        case AlignmentTask::qcShR1:
+          Ga[i][j][matrixIndex] = -1.;
+          break;
+
+        case AlignmentTask::qcShR2: // TODO: validate
+          Ga[i][j][matrixIndex] = -1.;
           break;
 
         case AlignmentTask::qcShZ:
-          Ga[i][j][d.matrixIndex] = hax*C + hay*S;
+          Ga[i][j][matrixIndex] = hax*C + hay*S;
           break;
 
         case AlignmentTask::qcRotZ:
-          Ga[i][j][d.matrixIndex] = (hax*hit->z + hbx - d.sx)*(-S) + (hay*hit->z + hby - d.sy)*C;
+          Ga[i][j][matrixIndex] = (hax*hit->z + hbx - d.sx)*(-S) + (hay*hit->z + hby - d.sy)*C;
           break;
       }
 
       if (buildDiagnosticPlots)
       {
-        double c = Ga[i][j][d.matrixIndex];
+        double c = Ga[i][j][matrixIndex];
         DetStat &s = statistics[id];
         s.coefHist[i]->Fill(c);
         s.resVsCoef[i]->SetPoint(s.resVsCoef[i]->GetN(), c, R);
@@ -286,8 +294,8 @@ vector<SingularMode> JanAlignmentAlgorithm::Analyze()
 
   if (verbosity > 2)
   {
-    printf("\tdetectors: %u\n", task->geometry.Detectors());
-    printf("\tRPs: %u\n", task->geometry.RPs());
+    printf("\tdetectors: %u\n", task->geometry.GetNumberOfDetectors());
+    printf("\tRPs: %u\n", task->geometry.GetNumberOfRPs());
     printf("\tfull dimension: %u\n", dim);
     printf("\tquantity classes: %lu\n", task->quantityClasses.size());
   }
@@ -415,9 +423,9 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
   for (unsigned int i = 0; i < constraints.size(); i++)
   {
     unsigned int offset = 0;
-    for (unsigned int j = 0; j < task->quantityClasses.size(); j++)
+    for (auto &quantityClass : task->quantityClasses)
     {
-      const TVectorD &cv = constraints[i].coef.find(task->quantityClasses[j])->second;
+      const TVectorD &cv = constraints[i].coef.find(quantityClass)->second;
       for (int k = 0; k < cv.GetNrows(); k++)
       {
         C[offset][i] = events * cv[k];
@@ -670,25 +678,29 @@ unsigned int JanAlignmentAlgorithm::Solve(const std::vector<AlignmentConstraint>
     offset += Mc[i].GetNrows();
   }
 
-  for (AlignmentGeometry::const_iterator dit = task->geometry.begin(); dit != task->geometry.end(); ++dit)
+  for (const auto &dit : task->geometry)
   {
     RPAlignmentCorrectionData r;
 
     for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
     {
-      unsigned idx = dit->second.matrixIndex;
+      signed idx = task->GetQuantityIndex(task->quantityClasses[i], dit.first);
+      if (idx < 0)
+        continue;
+
       unsigned int fi = offsets[i] + idx;
       double v = AL[fi];
       double e = sqrt(EM[fi][fi]);
       switch (task->quantityClasses[i])
       {
-        case AlignmentTask::qcShR: r.setTranslationR(v, e); break;
+        case AlignmentTask::qcShR1: r.setTranslationR1(v, e); break;
+        case AlignmentTask::qcShR2: r.setTranslationR2(v, e); break;
         case AlignmentTask::qcShZ: r.setTranslationZ(v, e); break;
         case AlignmentTask::qcRotZ: r.setRotationZ(v, e); break;
       }
     }
 
-    result.SetSensorCorrection(dit->first, r);
+    result.SetSensorCorrection(dit.first, r);
   }
 
   // save matrices, eigen data, ...

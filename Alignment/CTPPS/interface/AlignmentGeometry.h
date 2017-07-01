@@ -34,15 +34,11 @@ struct DetGeometry
 
   std::map<unsigned int, DirectionData> directionData;
 
-  // TODO: remove from geometry - it has nothing do it with it
-  unsigned int matrixIndex;     ///< index (0 ... AlignmentGeometry::Detectors()) within a S matrix block (for detector-related quantities)
-
-  // TODO: needed?
   bool isU;                     ///< only relevant for strips: true for U detectors, false for V detectors
                                 ///< global U, V frame is used - that matches with u, v frame of the 1200 detector
 
   DetGeometry(double _z = 0., double _sx = 0., double _sy = 0., bool _isU = false) :
-      z(_z), sx(_sx), sy(_sy), matrixIndex(0), isU(_isU)
+      z(_z), sx(_sx), sy(_sy), isU(_isU)
   {
   }
 
@@ -80,32 +76,25 @@ class AlignmentGeometry : public std::map<unsigned int, DetGeometry>
     void Insert(unsigned int id, const DetGeometry &g);
 
     /// returns the number of detectors in the collection
-    unsigned int Detectors() const
+    unsigned int GetNumberOfDetectors() const
     {
       return size();
     }
 
     /// returns the number of RPs in the collection
-    unsigned int RPs() const
+    unsigned int GetNumberOfRPs() const
     {
       return rps.size();
     }
     
-    /// returns detector id corresponding to the given matrix index
-    // TODO: remove
-    //unsigned int MatrixIndexToDetId(unsigned int) const;
-
-    /// returns reference the the geometry of the detector with the given matrix index
-    const_iterator FindByMatrixIndex(unsigned int) const;
-    
     /// check whether the sensor Id is valid (present in the map)
-    bool ValidSensorId(unsigned int id) const
+    bool IsValidSensorId(unsigned int id) const
     {
       return (find(id) != end());
     }
 
     /// check whether the RP Id is valid (present in the set)
-    bool ValidRPId(unsigned int id) const
+    bool IsValidRPId(unsigned int id) const
     {
       return (rps.find(id) != rps.end());
     }
