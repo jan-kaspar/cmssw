@@ -116,7 +116,7 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
   double hbx = trackFit.bx + trackFit.ax * (task->geometry.z0 - trackFit.z0);
   double hby = trackFit.by + trackFit.ay * (task->geometry.z0 - trackFit.z0); 
 
-  // prepare Gamma matrices
+  // prepare Gamma matrices (full of zeros)
   TMatrixD *Ga = new TMatrixD[task->quantityClasses.size()];
   for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
   {
@@ -131,8 +131,12 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
   set<unsigned int> rpSet;
   if (buildDiagnosticPlots)
   {
-    for (HitCollection::const_iterator it = selection.begin(); it != selection.end(); ++it)
-      rpSet.insert(it->id/10);
+    for (const auto &hit : selection)
+    {
+      CTPPSDetId detId(hit.id);
+      const unsigned int rpDecId = 100*detId.arm() + 10*detId.station() + detId.rp();
+      rpSet.insert(rpDecId);
+    }
   }
 
   // fill fit matrix and Gamma matrices
@@ -175,9 +179,12 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
 
     for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
     {
+      // check compatibility
       signed int matrixIndex = task->GetMeasurementIndex(task->quantityClasses[i], hit->id, hit->dirIdx);
       if (matrixIndex < 0)
         continue;
+
+      matrixIndex = task->GetQuantityIndex(task->quantityClasses[i], hit->id);
 
       switch (task->quantityClasses[i])
       {
@@ -185,7 +192,7 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
           Ga[i][j][matrixIndex] = -1.;
           break;
 
-        case AlignmentTask::qcShR2: // TODO: validate
+        case AlignmentTask::qcShR2:
           Ga[i][j][matrixIndex] = -1.;
           break;
 
@@ -245,12 +252,24 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
 
   // increment M
   for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
-    Mc[i] += GaT[i] * r;
+  {
+    if (Mc[i].GetNrows() < 1)
+      continue;
 
+    Mc[i] += GaT[i] * r;
+  }
+  
   // increment S
   for (unsigned int i = 0; i < task->quantityClasses.size(); i++)
+  {
     for (unsigned int j = 0; j < task->quantityClasses.size(); j++)
+    {
+      if (Sc[i][j].GetNrows() < 1 || Sc[i][j].GetNcols() < 1)
+        continue;
+
       Sc[i][j] += GaT[i] * sigma * Ga[j];
+    }
+  }
 
 #ifdef DEBUG
   printf("* checking normalized residuals, selection.size = %u\n", selection.size());
@@ -320,6 +339,10 @@ vector<SingularMode> JanAlignmentAlgorithm::Analyze()
     {
       r_size = Sc[i][j].GetNrows();
       c_size = Sc[i][j].GetNcols();
+
+      if (r_size < 1 || c_size < 1)
+        continue;
+
       TMatrixDSub(S, r_offset, r_offset+r_size-1, c_offset, c_offset+c_size-1) = Sc[i][j];
       c_offset += c_size;
     }

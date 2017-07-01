@@ -52,7 +52,7 @@ process.ctppsFastLocalSimulation.z0 = 210000
 # alignment
 process.load("Alignment.CTPPS.ctppsStraightTrackAligner_cfi")
 process.ctppsStraightTrackAligner.verbosity = 10
-process.ctppsStraightTrackAligner.rpIds = cms.vuint32(103, 123) # TODO: eventually add 116 and 123
+process.ctppsStraightTrackAligner.rpIds = cms.vuint32(103) # TODO: eventually add 116 and 123
 process.ctppsStraightTrackAligner.z0 = process.ctppsFastLocalSimulation.z0
 process.ctppsStraightTrackAligner.maxResidualToSigma = 10
 process.ctppsStraightTrackAligner.chiSqPerNdfCut = 100

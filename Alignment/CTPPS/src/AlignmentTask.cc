@@ -179,8 +179,6 @@ void AlignmentTask::BuildIndexMaps()
     }
   }
 
-  // TODO
-  if (true)
   {
     printf(">> AlignmentTask::BuildIndexMaps > measurement indeces\n");
 
