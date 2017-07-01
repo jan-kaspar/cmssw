@@ -72,7 +72,7 @@ class AlignmentTask
     /// whether the second (c_i ~ z^RP_i) constraint shall be applied
     bool useExtendedRPShZConstraint;
 
-    /// whether to apply the constraint mean U = mean V RotZ ("final" set of constraints only)
+    /// whether to apply the constraint mean U = mean V RotZ ("standard" set of constraints only)
     bool useEqualMeanUMeanVRotZConstraint;
 
     /// the geometry for this task
@@ -102,23 +102,23 @@ class AlignmentTask
     /// fixed detectors constraints from config file
     edm::ParameterSet fixedDetectorsConstraints;
 
-    /// settings of "final" constraints from config file
-    edm::ParameterSet finalConstraints;
+    /// settings of "standard" constraints from config file
+    edm::ParameterSet standardConstraints;
     
     /// returns the number of constraints of the given class
     unsigned int ConstraintsForClass(QuantityClass);
     
     /// builds a set of homogeneous constraints
-    void BuildHomogeneousConstraints(std::vector<AlignmentConstraint>&);
+    void BuildHomogeneousConstraints(std::vector<AlignmentConstraint>&) const;
     
     /// builds a set of fixed-detector constraints
-    void BuildFixedDetectorsConstraints(std::vector<AlignmentConstraint>&);
+    void BuildFixedDetectorsConstraints(std::vector<AlignmentConstraint>&) const;
     
-    /// builds the agreed constraints for final analysis
-    void BuildOfficialConstraints(std::vector<AlignmentConstraint>&);
+    /// builds the standard constraints
+    void BuildStandardConstraints(std::vector<AlignmentConstraint>&) const;
 
     /// adds constraints such that only 1 rot_z per RP is left
-    void BuildOneRotZPerPotConstraints(std::vector<AlignmentConstraint>&);
+    void BuildOneRotZPerPotConstraints(std::vector<AlignmentConstraint>&) const;
 };
 
 #endif

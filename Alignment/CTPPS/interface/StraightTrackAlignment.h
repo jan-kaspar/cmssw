@@ -84,7 +84,7 @@ class StraightTrackAlignment
     std::vector<AlignmentAlgorithm *> algorithms;
     
     /// ctDynamic not yet implemented
-    enum ConstraintsType { ctHomogeneous, ctFixedDetectors, ctDynamic, ctFinal };
+    enum ConstraintsType { ctHomogeneous, ctFixedDetectors, ctStandard };
     
     /// the chosen type of constraints
     ConstraintsType constraintsType;
@@ -230,8 +230,8 @@ class StraightTrackAlignment
     /// removes the hits of pots with too few planes active
     void RemoveInsufficientPots(HitCollection&, bool &selectionChanged);
     
-    /// builds a standard (homogeneous or fixed detectors) set of constraints
-    void BuildStandardConstraints(std::vector<AlignmentConstraint>&);
+    /// builds a selected set of constraints
+    void BuildConstraints(std::vector<AlignmentConstraint>&);
 
     /// fills diagnostic (chi^2, residua, ...) histograms
     void UpdateDiagnosticHistograms(const HitCollection &selection,

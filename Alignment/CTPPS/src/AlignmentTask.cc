@@ -37,7 +37,7 @@ AlignmentTask::AlignmentTask(const ParameterSet& ps) :
 
   homogeneousConstraints(ps.getParameterSet("homogeneousConstraints")),
   fixedDetectorsConstraints(ps.getParameterSet("fixedDetectorsConstraints")),
-  finalConstraints(ps.getParameterSet("finalConstraints"))
+  standardConstraints(ps.getParameterSet("standardConstraints"))
 {
   if (resolveShZ && resolveRPShZ)
     throw cms::Exception("AlignmentTask::AlignmentTask") << "resolveShZ and resolveRPShZ cannot be both set to True.";
@@ -148,7 +148,7 @@ unsigned int AlignmentTask::ConstraintsForClass(QuantityClass qc)
 
 //----------------------------------------------------------------------------------------------------
 
-void AlignmentTask::BuildHomogeneousConstraints(vector<AlignmentConstraint> &constraints)
+void AlignmentTask::BuildHomogeneousConstraints(vector<AlignmentConstraint> &constraints) const
 {
   printf(">> AlignmentTask::BuildHomogeneousConstraints > not yet ported, sorry!\n");
   throw 1;
@@ -251,7 +251,7 @@ void AlignmentTask::BuildHomogeneousConstraints(vector<AlignmentConstraint> &con
 
 //----------------------------------------------------------------------------------------------------
 
-void AlignmentTask::BuildFixedDetectorsConstraints(vector<AlignmentConstraint> &constraints)
+void AlignmentTask::BuildFixedDetectorsConstraints(vector<AlignmentConstraint> &constraints) const
 {
   printf(">> AlignmentTask::BuildFixedDetectorsConstraints > not yet ported.\n");
   throw 1;
@@ -327,7 +327,7 @@ void AlignmentTask::BuildFixedDetectorsConstraints(vector<AlignmentConstraint> &
 
 //----------------------------------------------------------------------------------------------------
 
-void AlignmentTask::BuildOneRotZPerPotConstraints(std::vector<AlignmentConstraint> &constraints)
+void AlignmentTask::BuildOneRotZPerPotConstraints(std::vector<AlignmentConstraint> &constraints) const
 {
   printf(">> AlignmentTask::BuildOneRotZPerPotConstraints > not yet ported\n");
   throw 1;
@@ -367,12 +367,12 @@ void AlignmentTask::BuildOneRotZPerPotConstraints(std::vector<AlignmentConstrain
 
 //----------------------------------------------------------------------------------------------------
 
-void AlignmentTask::BuildOfficialConstraints(vector<AlignmentConstraint> &constraints)
+void AlignmentTask::BuildStandardConstraints(vector<AlignmentConstraint> &constraints) const
 {
   // TODO
 
 #if 0
-  const vector<unsigned int> &units = finalConstraints.getParameter<vector<unsigned int>>("units");
+  const vector<unsigned int> &units = standardConstraints.getParameter<vector<unsigned int>>("units");
 
   // count planes in RPs
   struct PlaneCount { unsigned int all, U, V; };

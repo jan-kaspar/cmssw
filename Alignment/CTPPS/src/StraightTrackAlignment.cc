@@ -182,10 +182,8 @@ StraightTrackAlignment::StraightTrackAlignment(const ParameterSet& ps) :
   else
     if (ct.compare("fixedDetectors") == 0) constraintsType = ctFixedDetectors;
     else
-      if (ct.compare("dynamic") == 0) constraintsType = ctDynamic;
+      if (ct.compare("standard") == 0) constraintsType = ctStandard;
       else
-        if (ct.compare("final") == 0) constraintsType = ctFinal;
-        else
           throw cms::Exception("StraightTrackAlignment") << "Unknown constraints type `" << ct << "'.";
 
   // parse additional accepted RP sets
@@ -587,7 +585,7 @@ void StraightTrackAlignment::UpdateDiagnosticHistograms(const HitCollection &sel
 
 //----------------------------------------------------------------------------------------------------
 
-void StraightTrackAlignment::BuildStandardConstraints(vector<AlignmentConstraint> &constraints)
+void StraightTrackAlignment::BuildConstraints(vector<AlignmentConstraint> &constraints)
 {
   constraints.clear();
 
@@ -596,13 +594,13 @@ void StraightTrackAlignment::BuildStandardConstraints(vector<AlignmentConstraint
     case ctHomogeneous:
       task.BuildHomogeneousConstraints(constraints);
       return;
+
     case ctFixedDetectors:
       task.BuildFixedDetectorsConstraints(constraints);
       return;
-    case ctDynamic:
-      return;
-    case ctFinal:
-      task.BuildOfficialConstraints(constraints);
+
+    case ctStandard:
+      task.BuildStandardConstraints(constraints);
       return;
   }
 }
@@ -641,12 +639,7 @@ void StraightTrackAlignment::Finish()
 
   // build constraints
   vector<AlignmentConstraint> constraints;
-  if (constraintsType == ctDynamic)
-  {
-    printf(">> StraightTrackAlignment::Finish > Sorry, dynamic constraints not yet implemented.\n");
-  } else {
-    BuildStandardConstraints(constraints);
-  }
+  BuildConstraints(constraints);
 
   // save constraints
   if (taskDataFile)

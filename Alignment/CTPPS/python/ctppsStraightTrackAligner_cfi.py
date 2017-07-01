@@ -55,10 +55,8 @@ ctppsStraightTrackAligner = cms.EDAnalyzer("CTPPSStraightTrackAligner",
 
     # ---------- constraints ----------
 
-    # homogeneous, fixedDetectors, final
-    #constraintsType = cms.string("homogeneous"),
-    #constraintsType = cms.string("fixedDetectors"),
-    constraintsType = cms.string("final"),
+    # choices: homogeneous, fixedDetectors, standard
+    constraintsType = cms.string("standard"),
 
     useExtendedRotZConstraint = cms.bool(True),
     useZeroThetaRotZConstraint = cms.bool(False),
@@ -95,7 +93,7 @@ ctppsStraightTrackAligner = cms.EDAnalyzer("CTPPSStraightTrackAligner",
       ),
     ),
 
-    finalConstraints = cms.PSet(
+    standardConstraints = cms.PSet(
         units = cms.vuint32(1, 21)
     ),
 
