@@ -71,8 +71,6 @@ void LocalTrackFitter::FitAndRemoveOutliers(HitCollection &selection, const Alig
   if (verbosity > 5)
     printf(">> LocalTrackFitter::FitAndRemoveOutliers\n");
 
-  // determine number of measurements
-  
   if (selection.empty())
   {
     failed = true;
@@ -88,6 +86,7 @@ void LocalTrackFitter::FitAndRemoveOutliers(HitCollection &selection, const Alig
   {
 	const unsigned int &detId = it->id;
 
+    // make sure detector is in geometry
     AlignmentGeometry::const_iterator dit = geometry.find(detId);
     if (dit == geometry.end())
     {
@@ -96,21 +95,17 @@ void LocalTrackFitter::FitAndRemoveOutliers(HitCollection &selection, const Alig
     }
 
     const DetGeometry &d = dit->second;
+    const auto &dirData = d.GetDirectionData(it->dirIdx);
 
-    //if (verbosity > 5)
-    //  printf("\t%4u | %+9.3f  %+.4f  %+.4f | %+10.4f %+10.4f\n", detId, d.z, d.dx, d.dy, d.s, it->position);
+    // TODO: use z from hit
+    A(j, 0) = d.z * dirData.dx;
+    A(j, 1) = dirData.dx;
+    A(j, 2) = d.z * dirData.dy;
+    A(j, 3) = dirData.dy;
 
-// TODO
-    A(j, 0) = d.z * d.d2x;
-    A(j, 1) = d.d2x;
-    A(j, 2) = d.z * d.d2y;
-    A(j, 3) = d.d2y;
+    measVec(j) = it->position + dirData.s;  // in mm
 
-// TODO
-    measVec(j) = it->pos1 + d.s2;  // in mm
-
-// TODO
-    Vi(j, j) = 1. / it->sig1 / it->sig1;
+    Vi(j, j) = 1. / it->sigma / it->sigma;
   }
   //Print(A, "alpha");
 
@@ -149,8 +144,9 @@ void LocalTrackFitter::FitAndRemoveOutliers(HitCollection &selection, const Alig
   
   if (verbosity > 5)
   {
-    printf("\tax = %.3f mrad\tbx = %.4f mm\tay = %.3f mrad\tby = %.4f mm\n", trackFit.ax*1E3, trackFit.bx, trackFit.ay*1E3, trackFit.by);
-    printf("\tndof = %i, chi^2/ndof/si^2 = %.3f\n", trackFit.ndf, trackFit.chi_sq / trackFit.ndf);
+    printf("    ax = %.3f mrad, bx = %.4f mm, ay = %.3f mrad, by = %.4f mm, z0 = %.3f mm\n",
+      trackFit.ax*1E3, trackFit.bx, trackFit.ay*1E3, trackFit.by, trackFit.z0);
+    printf("    ndof = %i, chi^2/ndof/si^2 = %.3f\n", trackFit.ndf, trackFit.chi_sq / trackFit.ndf);
   }
 
   // check residuals
@@ -159,19 +155,17 @@ void LocalTrackFitter::FitAndRemoveOutliers(HitCollection &selection, const Alig
   j = 0;
   for (HitCollection::iterator it = selection.begin(); it != selection.end(); ++j)
   {
-    // TODO
     if (verbosity > 5)
-      printf("\t\t\t\t%2u, %4u: interpolation = %+8.1f um, R = %+6.1f um, R / sigma = %+6.2f\n", j, 
-        it->id, interpolation[j]*1E3, R[j]*1E3, R[j]/it->sig1);
+      printf("        %2u, %4u: interpolation = %+8.1f um, R = %+6.1f um, R / sigma = %+6.2f\n", j, 
+        it->id, interpolation[j]*1E3, R[j]*1E3, R[j]/it->sigma);
 
-    // TODO
-    double resToSigma = R[j] / it->sig1;
+    double resToSigma = R[j] / it->sigma;
     if (fabs(resToSigma) > maxResidualToSigma)
     {
       selection.erase(it);
       selectionChanged = true;
       if (verbosity > 5)
-        printf("\t\t\t\t\tRemoved\n");
+        printf("            Removed\n");
     } else
       ++it;
   } 

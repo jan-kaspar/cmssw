@@ -8,8 +8,9 @@
 
 #include "Alignment/CTPPS/interface/AlignmentGeometry.h"
 
+#include "Alignment/CTPPS/interface/utilities.h"
+
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
-#include "FWCore/Utilities/interface/Exception.h"
 
 #include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
 #include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h"
@@ -28,6 +29,8 @@ void AlignmentGeometry::Insert(unsigned int id, const DetGeometry &g)
 
 //----------------------------------------------------------------------------------------------------
 
+// TODO: remove
+/*
 unsigned int AlignmentGeometry::MatrixIndexToDetId(unsigned int mi) const
 {
   const_iterator it = FindByMatrixIndex(mi);
@@ -40,6 +43,7 @@ unsigned int AlignmentGeometry::MatrixIndexToDetId(unsigned int mi) const
     return 0;
   }
 }
+*/
 
 //----------------------------------------------------------------------------------------------------
 
@@ -57,54 +61,22 @@ AlignmentGeometry::const_iterator AlignmentGeometry::FindByMatrixIndex(unsigned 
 
 void AlignmentGeometry::Print() const
 {
-  for (const_iterator it = begin(); it != end(); ++it)
+  for (const_iterator it = begin(); it != end(); ++it) 
   {
-    const DetGeometry &d = it->second;
-    printf("%u\t%+E\t%+E\t%+E\t%+E\t%+E\t%+E\t%+E\n", it->first, d.z, d.sx, d.sy, d.d1x, d.d1y, d.d2x, d.d2y);
-  }
-}
+    PrintId(it->first);
 
-//----------------------------------------------------------------------------------------------------
+    printf(" [%2u] z = %+10.4f mm │ shift: x = %+7.3f mm, y = %+7.3f mm │ ",
+        it->second.matrixIndex, it->second.z,
+        it->second.sx, it->second.sy);
 
-void AlignmentGeometry::LoadFromFile(const std::string &filename)
-{
-  clear();
-
-  FILE *f = fopen(filename.c_str(), "r");
-  if (!f)
-    throw cms::Exception("AlignmentGeometry::LoadFromFile") << "File `" << filename << "' can not be opened." << endl;
-
-  while (!feof(f))
-  {
-    unsigned int id;
-    float x, y, z, d1x, d1y, d2x, d2y;
-
-    int res = fscanf(f, "%u%E%E%E%E%E%E%E", &id, &x, &y, &z, &d1x, &d1y, &d2x, &d2y);
-
-    if (res == 8)
+    for (const auto &dit : it->second.directionData)
     {
-      bool isU = false;
-
-      CTPPSDetId detId(id);
-      if (detId.subdetId() == CTPPSDetId::sdTrackingStrip)
-      {
-        TotemRPDetId stripDetId(id);
-        const unsigned int rpNum = stripDetId.rp();
-        const unsigned int plNum = stripDetId.plane();
-        isU = (plNum % 2 != 0);
-        if (rpNum == 2 || rpNum == 3)
-          isU = !isU;
-      }
-
-      Insert(id, DetGeometry(z, x, y, d1x, d1y, d2x, d2y, isU));      
-    } else {
-      if (!feof(f))
-      {
-        throw cms::Exception("AlignmentGeometry::LoadFromFile") << "Cannot parse file `" << filename
-          << "'. The format is probably wrong." << endl;
-      }
+      printf("dir%u: %+.3f, %+.3f │ ", dit.first, dit.second.dx, dit.second.dy);
     }
-  }
 
-  fclose(f);
+    if (CTPPSDetId(it->first).subdetId() == CTPPSDetId::sdTrackingStrip)
+      printf("%s", (it->second.isU) ? "U-det" : "V-det");
+
+    printf("\n");
+  }
 }

@@ -86,7 +86,9 @@ void AlignmentTask::BuildGeometry(const vector<unsigned int> &rpDecIds,
         isU = !isU;
     }
 
-    DetGeometry dg(c.z(), c.x(), c.y(), d1.x(), d1.y(), d2.x(), d2.y(), isU);
+    DetGeometry dg(c.z() - z0, c.x(), c.y(), isU);
+    dg.SetDirection(1, d1.x(), d1.y());
+    dg.SetDirection(2, d2.x(), d2.y());
     geometry.Insert(it->first, dg);
   }
 
@@ -148,6 +150,10 @@ unsigned int AlignmentTask::ConstraintsForClass(QuantityClass qc)
 
 void AlignmentTask::BuildHomogeneousConstraints(vector<AlignmentConstraint> &constraints)
 {
+  printf(">> AlignmentTask::BuildHomogeneousConstraints > not yet ported, sorry!\n");
+  throw 1;
+
+#if 0
   for (unsigned int cl = 0; cl < quantityClasses.size(); cl++)
   {
     unsigned int size = ConstraintsForClass(quantityClasses[cl]);
@@ -240,12 +246,17 @@ void AlignmentTask::BuildHomogeneousConstraints(vector<AlignmentConstraint> &con
     if (oneRotZPerPot && quantityClasses[cl] == qcRotZ)
       BuildOneRotZPerPotConstraints(constraints);
   }
+#endif
 }
 
 //----------------------------------------------------------------------------------------------------
 
 void AlignmentTask::BuildFixedDetectorsConstraints(vector<AlignmentConstraint> &constraints)
 {
+  printf(">> AlignmentTask::BuildFixedDetectorsConstraints > not yet ported.\n");
+  throw 1;
+
+#if 0
   for (unsigned int cl = 0; cl < quantityClasses.size(); cl++)
   {
     const string &tag = QuantityClassTag(quantityClasses[cl]);
@@ -311,27 +322,17 @@ void AlignmentTask::BuildFixedDetectorsConstraints(vector<AlignmentConstraint> &
     if (oneRotZPerPot && quantityClasses[cl] == qcRotZ)
         BuildOneRotZPerPotConstraints(constraints);
   }
+#endif
 }
 
 //----------------------------------------------------------------------------------------------------
 
 void AlignmentTask::BuildOneRotZPerPotConstraints(std::vector<AlignmentConstraint> &constraints)
 {
-/*
-  AlignmentConstraint ac;
-  ac.forClass = qcRotZ;
-  for (unsigned int i = 0; i < quantityClasses.size(); i++) {
-    ac.coef[quantityClasses[i]].ResizeTo(QuantitiesOfClass(quantityClasses[i]));
-    ac.coef[quantityClasses[i]].Zero();
-  }
-  ac.val = 0;
-  ac.name = "RotZ: global";
-  ac.extended = false;
-  AlignmentGeometry::iterator it = geometry.begin();
-  ac.coef[qcRotZ][geometry[it->first].matrixIndex] = 1.;
-  constraints.push_back(ac);
-*/
+  printf(">> AlignmentTask::BuildOneRotZPerPotConstraints > not yet ported\n");
+  throw 1;
 
+#if 0
   // geometry is sorted by the detector number
   unsigned int prev_rp = 12345;
   for (AlignmentGeometry::iterator it = geometry.begin(); it != geometry.end(); ++it)
@@ -361,12 +362,16 @@ void AlignmentTask::BuildOneRotZPerPotConstraints(std::vector<AlignmentConstrain
 
     constraints.push_back(ac);
   }
+#endif
 }
 
 //----------------------------------------------------------------------------------------------------
 
 void AlignmentTask::BuildOfficialConstraints(vector<AlignmentConstraint> &constraints)
 {
+  // TODO
+
+#if 0
   const vector<unsigned int> &units = finalConstraints.getParameter<vector<unsigned int>>("units");
 
   // count planes in RPs
@@ -539,7 +544,6 @@ void AlignmentTask::BuildOfficialConstraints(vector<AlignmentConstraint> &constr
     }
   }
 
-#if 0
   // print constraints
   for (const auto &c : constraints)
   {

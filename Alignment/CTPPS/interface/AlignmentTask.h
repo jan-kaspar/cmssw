@@ -27,9 +27,14 @@ class AlignmentTask
     /// quantity classes
     enum QuantityClass
     {
+      // 
       qcShR,    ///< detector shifts in readout direction
+
+
       qcShZ,    ///< detector shifts in z
       qcRotZ,   ///< detector rotations around z
+
+      // TODO: reomove this
       qcRPShZ   ///< RP shifts in z
     };
     
@@ -48,6 +53,7 @@ class AlignmentTask
     /// whether to resolve detector rotations around z
     bool resolveRotZ;
 
+    // TODO: remove this
     /// whether to resolve RP shifts in z
     bool resolveRPShZ;
 
@@ -71,6 +77,11 @@ class AlignmentTask
 
     /// the geometry for this task
     AlignmentGeometry geometry;
+
+    /// returns the number of quantities of the given class
+    unsigned int QuantitiesOfClass(QuantityClass);
+
+    // TODO: add matrixIndex mappings and methods
    
     /// dummy constructor (not to be used)
     AlignmentTask()
@@ -93,9 +104,6 @@ class AlignmentTask
 
     /// settings of "final" constraints from config file
     edm::ParameterSet finalConstraints;
-
-    /// returns the number of quantities of the given class
-    unsigned int QuantitiesOfClass(QuantityClass);
     
     /// returns the number of constraints of the given class
     unsigned int ConstraintsForClass(QuantityClass);

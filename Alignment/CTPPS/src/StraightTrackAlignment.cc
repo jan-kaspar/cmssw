@@ -288,23 +288,7 @@ void StraightTrackAlignment::Begin(const EventSetup &es)
 
   // print geometry info
   if (verbosity > 1)
-  {
-    for (AlignmentGeometry::iterator it = task.geometry.begin(); it != task.geometry.end(); ++it) 
-    {
-      PrintId(it->first);
-
-      printf(" [%2u] z = %+10.4f mm │ shift: x = %+7.3f mm, y = %+7.3f mm │ dir1: %+.3f, %+.3f │ dir2: %+.3f, %+.3f │",
-          it->second.matrixIndex, it->second.z,
-          it->second.sx, it->second.sy,
-          it->second.d1x, it->second.d1y,
-          it->second.d2x, it->second.d2y);
-
-      if (CTPPSDetId(it->first).subdetId() == CTPPSDetId::sdTrackingStrip)
-        printf(" %s", (it->second.isU) ? "U-det" : "V-det");
-
-      printf("\n");
-    }
-  }
+    task.geometry.Print();
   
   // save task (including geometry) and fitter
   if (taskDataFile)
@@ -352,7 +336,7 @@ void StraightTrackAlignment::ProcessEvent(const DetSetVector<TotemRPRecHit> &hit
       continue;
 
     for (const auto &h : pv)
-      hitSelection.emplace_back(Hit(pv.detId(), h.getPosition(), h.getSigma()));
+      hitSelection.emplace_back(Hit(pv.detId(), 2, h.getPosition(), h.getSigma()));
   }
 
   // diamonds
@@ -366,7 +350,7 @@ void StraightTrackAlignment::ProcessEvent(const DetSetVector<TotemRPRecHit> &hit
       continue;
 
     for (const auto &h : pv)
-      hitSelection.emplace_back(Hit(pv.detId(), h.getX(), h.getXWidth() / sqrt(12.)));
+      hitSelection.emplace_back(Hit(pv.detId(), 1, h.getX(), h.getXWidth() / sqrt(12.)));
   }
 
   // pixels
@@ -380,7 +364,10 @@ void StraightTrackAlignment::ProcessEvent(const DetSetVector<TotemRPRecHit> &hit
       continue;
 
     for (const auto &h : pv)
-      hitSelection.emplace_back(Hit(pv.detId(), h.getPoint().x(), sqrt(h.getError().xx()), h.getPoint().y(), sqrt(h.getError().yy())));
+    {
+      hitSelection.emplace_back(Hit(pv.detId(), 1, h.getPoint().x(), sqrt(h.getError().xx())));
+      hitSelection.emplace_back(Hit(pv.detId(), 2, h.getPoint().y(), sqrt(h.getError().yy())));
+    }
   }
 
   if (hitSelection.empty())
@@ -541,13 +528,15 @@ void StraightTrackAlignment::UpdateDiagnosticHistograms(const HitCollection &sel
     AlignmentGeometry::iterator dit = task.geometry.find(id);
     if (dit == task.geometry.end())
       continue;
-    DetGeometry &d = dit->second;
 
-    // TODO
-    double m = hitCollectionIterator->pos1 + d.s2;
+    DetGeometry &d = dit->second;
+    const auto dirData = d.GetDirectionData(hitCollectionIterator->dirIdx);
+
+    // TODO: z from hit
+    double m = hitCollectionIterator->position + dirData.s;
     double x = trackFit.ax * d.z + trackFit.bx;
     double y = trackFit.ay * d.z + trackFit.by;
-    double f = x*d.d2x + y*d.d2y;
+    double f = x*dirData.dx + y*dirData.dy;
     double R = m - f;
 
     map<unsigned int, ResiduaHistogramSet>::iterator it = residuaHistograms.find(id);

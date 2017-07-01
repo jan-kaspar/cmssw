@@ -31,6 +31,8 @@
 #include "Geometry/VeryForwardGeometryBuilder/interface/TotemRPGeometry.h"
 #include "Geometry/Records/interface/VeryForwardMisalignedGeometryRecord.h"
 
+#include "Alignment/CTPPS/interface/utilities.h"
+
 #include "TMath.h"
 #include "TMatrixD.h"
 #include "TVectorD.h"
@@ -291,14 +293,9 @@ void CTPPSFastLocalSimulation::GenerateTrack(unsigned int idx, CLHEP::HepRandomE
 
       if (verbosity > 5)
       {
-        if (detId.subdetId() == CTPPSDetId::sdTrackingStrip)
-          cout << endl << "        strip " << it->first << ": " << TotemRPDetId(it->first) << endl;
-
-        if (detId.subdetId() == CTPPSDetId::sdTimingDiamond)
-          cout << endl << "        diamond " << it->first << ": " << CTPPSDiamondDetId(it->first) << endl;
-
-        if (detId.subdetId() == CTPPSDetId::sdTrackingPixel)
-          cout << endl << "        pixel " << it->first << ": " << CTPPSPixelDetId(it->first) << endl;
+        printf("        ");
+        PrintId(it->first);
+        printf(": ");
       }
 
       // determine the track impact point (in global coordinates)
@@ -399,7 +396,7 @@ void CTPPSFastLocalSimulation::GenerateTrack(unsigned int idx, CLHEP::HepRandomE
         const double sigma = pitchPixels / sqrt(12.);
 
         const LocalPoint lp(h_loc.x(), h_loc.y(), h_loc.z());
-        const LocalError le(sigma, sigma, 0.);
+        const LocalError le(sigma, 0., sigma);
 
         DetSet<CTPPSPixelRecHit> &hits = pixelHitColl->find_or_insert(detId);
         hits.push_back(CTPPSPixelRecHit(lp, le));

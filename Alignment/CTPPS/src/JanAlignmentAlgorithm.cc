@@ -146,21 +146,21 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
       continue;
   
     DetGeometry &d = git->second;
+    const auto &dirData = d.GetDirectionData(it->dirIdx);
 
-    // TODO
-    A(j, 0) = d.z * d.d2x;
-    A(j, 1) = d.d2x;
-    A(j, 2) = d.z * d.d2y;
-    A(j, 3) = d.d2y;
+    // TODO: get z from hit
+    A(j, 0) = d.z * dirData.dx;
+    A(j, 1) = dirData.dx;
+    A(j, 2) = d.z * dirData.dy;
+    A(j, 3) = dirData.dy;
 
-    // TODO
-    m(j) = it->pos1 + d.s2;  // in mm
+    m(j) = it->position + dirData.s;  // in mm
 
-    // TODO
-    Vi(j, j) = 1. / it->sig1 / it->sig1;
+    Vi(j, j) = 1. / it->sigma / it->sigma;
 
-    double C = d.d2x, S = d.d2y;
+    double C = dirData.dx, S = dirData.dy;
     
+    // TODO: get z from hit
     double hx = hax * d.z + hbx;        // in mm
     double hy = hay * d.z + hby;
     double R = m(j) - (hx*C + hy*S);    // (standard) residual
@@ -185,6 +185,7 @@ void JanAlignmentAlgorithm::Feed(const HitCollection &selection, const LocalTrac
           //Ga[i][j][d.rpMatrixIndex] = hax*C + hay*S;
           break;
         case AlignmentTask::qcRotZ:
+          // TODO: using d.z is not correct for pixels: depending on track parameters, the z of impact point may vary in the order of mm's
           Ga[i][j][d.matrixIndex] = (hax*d.z + hbx - d.sx)*(-S) + (hay*d.z + hby - d.sy)*C; break;
       }
 

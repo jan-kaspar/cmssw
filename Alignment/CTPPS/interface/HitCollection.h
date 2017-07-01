@@ -11,24 +11,35 @@
 
 #include <vector>
 
-class RPRecoHit;
+//----------------------------------------------------------------------------------------------------
 
 struct Hit
 {
   /// sensor id
   unsigned int id;
 
-  /// first measurement: position and uncertainty in mm
-  double pos1, sig1;
+  /// index of read-out direction (valid are: 1 or 2)
+  unsigned int dirIdx;
 
-  /// second measurement: position and uncertainty in mm
-  double pos2, sig2;
+  /// measurement position; mm
+  double position;
 
-  Hit(unsigned int _id=0, double _p1=0., double _s1=0., double _p2=0., double _s2=0.) : id(_id), pos1(_p1), sig1(_s1), pos2(_p2), sig2(_s2)
+  /// measurement position; mm
+  double sigma;
+
+  // TODO: estimate of z global ??
+  //  for strips and diamond: copy constant from geometry
+  //  for pixels: evaluate global z from local vector (m1, m2, 0)
+
+  Hit(unsigned int _id=0, unsigned int _dirIdx=0, double _pos=0, double _sig=0) : id(_id), dirIdx(_dirIdx), position(_pos), sigma(_sig)
   {
   }
 };
 
+//----------------------------------------------------------------------------------------------------
+
 typedef std::vector<Hit> HitCollection;
+
+//----------------------------------------------------------------------------------------------------
 
 #endif

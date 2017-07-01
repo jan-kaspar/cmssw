@@ -46,6 +46,8 @@ process.load("Alignment.CTPPS.ctppsFastLocalSimulation_cfi")
 process.ctppsFastLocalSimulation.verbosity = 10
 process.ctppsFastLocalSimulation.roundToPitch = False # TODO: eventually change to True
 process.ctppsFastLocalSimulation.z0 = 210000
+#process.ctppsFastLocalSimulation.angular_distribution.x_width = 0
+#process.ctppsFastLocalSimulation.angular_distribution.y_width = 0
 
 # alignment
 process.load("Alignment.CTPPS.ctppsStraightTrackAligner_cfi")
