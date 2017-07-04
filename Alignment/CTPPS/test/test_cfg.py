@@ -29,12 +29,10 @@ process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService
 # base geometry
 process.load("geometry_CTPPS_alaTotem_RECO_cfi")
 
-# misalignments
+# misalignments and alignment corrections
 process.load("Geometry.VeryForwardGeometryBuilder.TotemRPIncludeAlignments_cfi")
-process.TotemRPIncludeAlignments.MisalignedFiles = cms.vstring(
-    "./alignment.xml",
-    #"./output_Jan.xml",
-)
+process.TotemRPIncludeAlignments.MisalignedFiles = cms.vstring("./alignment.xml") # misalignments
+#process.TotemRPIncludeAlignments.RealFiles = cms.vstring("./output_Jan.xml") # known alignment corrections
 
 # geometry printer
 process.geomInfo = cms.EDAnalyzer("GeometryInfoModule",
