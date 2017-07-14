@@ -21,6 +21,7 @@
 #include "Alignment/CTPPS/interface/JanAlignmentAlgorithm.h"
 #include "Alignment/CTPPS/interface/StraightTrackAlignment.h"
 #include "Alignment/CTPPS/interface/utilities.h"
+#include "Alignment/CTPPS/interface/CommonMethods.h"
 
 #include <set>
 #include <unordered_set>
@@ -761,32 +762,31 @@ void StraightTrackAlignment::Finish()
         preciseXMLFormat, algorithms[a]->HasErrorEstimate());
     }
 
-    // TODO
-/*
+    // TODO: validate logic, order of merging and synchronisation
     // merge alignments
     RPAlignmentCorrectionsData cumulativeAlignments;
     cumulativeAlignments.AddCorrections(initialAlignments, false);
-    cumulativeAlignments.AddCorrections(results[a], false, task.resolveShR,
-      task.resolveShZ || task.resolveRPShZ, task.resolveRotZ);
+    cumulativeAlignments.AddCorrections(results[a], false, task.resolveShR, task.resolveShZ, task.resolveRotZ);
 
     // synchronize XY and readout shifts, normalize z rotations
-    for (RPAlignmentCorrectionsData::mapType::iterator it = cumulativeAlignments.sensors.begin(); 
-        it != cumulativeAlignments.sensors.end(); ++it)
+    for (auto it = cumulativeAlignments.sensors.begin(); it != cumulativeAlignments.sensors.end(); ++it)
     {
-      DetGeometry &d = task.geometry[it->first];
-      double cos = d.dx, sin = d.dy;
-      it->second.XYTranslationToReadout(cos, sin);
-      it->second.NormalizeRotationZ();
+      const DetGeometry &g = task.geometry[it->first];
+      auto d1 = g.GetDirectionData(1);
+      auto d2 = g.GetDirectionData(2);
+
+      it->second.xyTranslationToReadout(d1.dx, d1.dy, d2.dx, d2.dy);
+
+      it->second.normalizeRotationZ();
     }
 
     // write cumulative results
     if (!cumulativeFileNamePrefix.empty())
-      cumulativeAlignments.WriteXMLFile(cumulativeFileNamePrefix + algorithms[a]->GetName() + ".xml",
+    {
+      RPAlignmentCorrectionsMethods::WriteXMLFile(cumulativeAlignments, cumulativeFileNamePrefix + algorithms[a]->GetName() + ".xml",
         preciseXMLFormat, algorithms[a]->HasErrorEstimate());
-*/
+    }
 
-    // TODO
-/*
     // write expanded and factored results
     if (!expandedFileNamePrefix.empty() || !factoredFileNamePrefix.empty())
     {
@@ -796,18 +796,21 @@ void StraightTrackAlignment::Finish()
       if (factorizationVerbosity)
         printf(">> Factorizing results of %s algorithm\n", algorithms[a]->GetName().c_str());
       
-      cumulativeAlignments.FactorRPFromSensorCorrections(expandedAlignments, factoredAlignments,
+      CommonMethods::FactorRPFromSensorCorrections(cumulativeAlignments, expandedAlignments, factoredAlignments,
         task.geometry, factorizationVerbosity);
 
       if (!expandedFileNamePrefix.empty())
-        expandedAlignments.WriteXMLFile(expandedFileNamePrefix + algorithms[a]->GetName() + ".xml",
+      {
+        RPAlignmentCorrectionsMethods::WriteXMLFile(expandedAlignments, expandedFileNamePrefix + algorithms[a]->GetName() + ".xml",
           preciseXMLFormat, algorithms[a]->HasErrorEstimate());
+      }
 
       if (!factoredFileNamePrefix.empty())
-        factoredAlignments.WriteXMLFile(factoredFileNamePrefix + algorithms[a]->GetName() + ".xml",
+      {
+        RPAlignmentCorrectionsMethods::WriteXMLFile(factoredAlignments, factoredFileNamePrefix + algorithms[a]->GetName() + ".xml",
           preciseXMLFormat, algorithms[a]->HasErrorEstimate());
+      }
     }
-*/
   }
   
   // prepare algorithms for destructions
