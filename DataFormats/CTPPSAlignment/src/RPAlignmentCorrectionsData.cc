@@ -12,6 +12,7 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include "DataFormats/CTPPSAlignment/interface/RPAlignmentCorrectionsData.h"
+#include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
 
 #include <set>
 
@@ -58,15 +59,14 @@ RPAlignmentCorrectionData RPAlignmentCorrectionsData::GetFullSensorCorrection(un
   bool useRPErrors) const
 {
   RPAlignmentCorrectionData c;
-  mapType::const_iterator it = rps.find(id / 10);
+
+  mapType::const_iterator it = rps.find(CTPPSDetId(id).getRPId());
   if (it != rps.end())
     c = it->second;
+
   it = sensors.find(id);
   if (it != sensors.end())
     c.add(it->second, useRPErrors);
-
-  //printf("> full correction %u | ", id);
-  //c.print();
 
   return c;
 }
@@ -114,10 +114,10 @@ void RPAlignmentCorrectionsData::AddSensorCorrection(unsigned int id, const RPAl
 void RPAlignmentCorrectionsData::AddCorrections(const RPAlignmentCorrectionsData &nac, bool sumErrors,
   bool addShR, bool addShZ, bool addRotZ)
 {
-  for (mapType::const_iterator it = nac.rps.begin(); it != nac.rps.end(); ++it)
+  for (auto it = nac.rps.begin(); it != nac.rps.end(); ++it)
     AddRPCorrection(it->first, it->second, sumErrors, addShR, addShZ, addRotZ);
   
-  for (mapType::const_iterator it = nac.sensors.begin(); it != nac.sensors.end(); ++it)
+  for (auto it = nac.sensors.begin(); it != nac.sensors.end(); ++it)
     AddSensorCorrection(it->first, it->second, sumErrors, addShR, addShZ, addRotZ);
 }
 
