@@ -31,8 +31,8 @@ process.load("geometry_CTPPS_alaTotem_RECO_cfi")
 
 # misalignments and alignment corrections
 process.load("Geometry.VeryForwardGeometryBuilder.TotemRPIncludeAlignments_cfi")
-process.TotemRPIncludeAlignments.MisalignedFiles = cms.vstring("./alignment.xml") # misalignments
-#process.TotemRPIncludeAlignments.RealFiles = cms.vstring("./output_Jan.xml") # known alignment corrections
+process.TotemRPIncludeAlignments.MisalignedFiles = cms.vstring("./mis_alignment.xml") # misalignments
+process.TotemRPIncludeAlignments.RealFiles = cms.vstring("./cumulative_results_Jan.xml") # known alignment corrections
 
 # geometry printer
 process.geomInfo = cms.EDAnalyzer("GeometryInfoModule",
