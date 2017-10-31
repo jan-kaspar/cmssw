@@ -322,7 +322,7 @@ void ProtonReconstructionAlgorithm::reconstructFromSingleRP(const vector<const C
       throw cms::Exception("") << "Optics data not available for RP " << it->getRPId() << ".";
   }
 
-  // rough estimate of xi from each track
+  // rough estimate of xi and th_y from each track
   for (const auto &track : tracks)
   {
     CTPPSDetId rpId(track->getRPId());
@@ -331,17 +331,16 @@ void ProtonReconstructionAlgorithm::reconstructFromSingleRP(const vector<const C
     printf("* reconstructFromSingleRP(%u)\n", decRPId);
 
     auto oit = m_rp_optics_.find(track->getRPId());
-    double xi = oit->second.s_xi_vs_x->Eval(track->getX() * 1E-3); // mm --> m
+    double xi = oit->second.s_xi_vs_x->Eval(track->getX() * 1E-3);
+    double th_y = (track->getY()*1E-3 - oit->second.s_y0_vs_xi->Eval(xi)) / oit->second.s_L_y_vs_xi->Eval(xi);
 
-    // TODO: reconstruct th_y
-
-    printf("    x = %f mm, xi = %f\n", track->getX(), xi);
+    printf("    x = %f mm, xi = %f, y = %f mm, th_y = %E\n", track->getX(), xi, track->getY(), th_y);
 
     reco::ProtonTrack pt;
     pt.method = reco::ProtonTrack::rmSingleRP;
     pt.setValid(true);
     pt.setVertex(Local3DPoint(0., 0., 0.));
-    pt.setDirection(Local3DVector(0., 0., 1.));
+    pt.setDirection(Local3DVector(0., th_y, 1.)); // TODO: make this correct, apply the CMS coordinate convention
     pt.setXi(xi);
     pt.fitNDF = 0;
     pt.fitChiSq = 0.;
