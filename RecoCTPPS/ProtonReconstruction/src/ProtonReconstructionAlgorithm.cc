@@ -265,7 +265,7 @@ void ProtonReconstructionAlgorithm::reconstructFromMultiRP(const vector<const CT
   const double th_y_0 = (v_y[0] * y[1] - v_y[1] * y[0]) / det_y;
 
   printf("* ProtonReconstructionAlgorithm::reconstructFromMultiRP\n");
-  printf("    initial estimate: xi_0 = %f, th_y_0 = %E, vtx_y_0 = %E\n", xi_0, th_y_0, vtx_y_0);
+  printf("    initial estimate: xi_0 = %f, th_y_0 = %.1f, vtx_y_0 = %.1f um\n", xi_0, th_y_0*1E6, vtx_y_0*1E3);
 
   // minimisation
   fitter_->Config().ParSettings(0).Set("xi", xi_0, 0.005);
@@ -290,7 +290,7 @@ void ProtonReconstructionAlgorithm::reconstructFromMultiRP(const vector<const CT
     << "theta_y=" << params[2] << ", "
     << "vertex_y=" << params[3] << "\n";
 
-  printf("    fit: xi = %f, th_x = %E, th_y = %E, vtx_y = %E\n", params[0], params[1], params[2], params[3]);
+  printf("    fit: xi = %.4f, th_x = %.1f urad, th_y = %.1f urad, vtx_y = %.1f um\n", params[0], params[1]*1E6, params[2]*1E6, params[3]*1E3);
 
   reco::ProtonTrack pt;
   pt.method = reco::ProtonTrack::rmMultiRP;
@@ -334,7 +334,7 @@ void ProtonReconstructionAlgorithm::reconstructFromSingleRP(const vector<const C
     double xi = oit->second.s_xi_vs_x->Eval(track->getX() * 1E-3);
     double th_y = (track->getY()*1E-3 - oit->second.s_y0_vs_xi->Eval(xi)) / oit->second.s_L_y_vs_xi->Eval(xi);
 
-    printf("    x = %f mm, xi = %f, y = %f mm, th_y = %E\n", track->getX(), xi, track->getY(), th_y);
+    printf("    x = %.3f mm, xi = %.4f, y = %.3f mm, th_y = %.1f urad\n", track->getX(), xi, track->getY(), th_y*1E6);
 
     reco::ProtonTrack pt;
     pt.method = reco::ProtonTrack::rmSingleRP;
