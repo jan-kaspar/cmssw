@@ -42,11 +42,12 @@ class CTPPSProtonReconstructionValidation : public edm::one::EDAnalyzer<>
 
     struct SingleRPPlots
     {
-      TH1D *h_xi = NULL;
+      TH1D *h_xi = NULL, *h_th_y=NULL;
 
       void Init()
       {
         h_xi = new TH1D("", ";#xi", 100, 0., 0.2);
+        h_th_y = new TH1D("", ";#theta_{y}", 100, -500E-6, +500E-6);
       }
 
       void Fill(const reco::ProtonTrack &p)
@@ -57,12 +58,14 @@ class CTPPSProtonReconstructionValidation : public edm::one::EDAnalyzer<>
         if (p.valid())
         {
           h_xi->Fill(p.xi());
+          h_th_y->Fill(p.direction().y());
         }
       }
 
       void Write() const
       {
         h_xi->Write("h_xi");
+        h_th_y->Write("h_th_y");
       }
     };
 
@@ -115,10 +118,12 @@ class CTPPSProtonReconstructionValidation : public edm::one::EDAnalyzer<>
     struct SingleMultiCorrelationPlots
     {
       TH2D *h_xi_mu_vs_xi_si = NULL;
+      TH2D *h_th_y_mu_vs_th_y_si = NULL;
 
       void Init()
       {
         h_xi_mu_vs_xi_si = new TH2D("", ";#xi_{single};#xi_{multi}", 100, 0., 0.2, 100, 0., 0.2);
+        h_th_y_mu_vs_th_y_si = new TH2D("", ";#theta_{y,single};#theta_{y,multi}", 100, -500E-6, +500E-6, 100, -500E-6, +500E-6);
       }
 
       void Fill(const reco::ProtonTrack &p_single, const reco::ProtonTrack &p_multi)
@@ -129,12 +134,14 @@ class CTPPSProtonReconstructionValidation : public edm::one::EDAnalyzer<>
         if (p_single.valid() && p_multi.valid())
         {
           h_xi_mu_vs_xi_si->Fill(p_single.xi(), p_multi.xi());
+          h_th_y_mu_vs_th_y_si->Fill(p_single.direction().y(), p_multi.direction().y());
         }
       }
 
       void Write() const
       {
         h_xi_mu_vs_xi_si->Write("h_xi_mu_vs_xi_si");
+        h_th_y_mu_vs_th_y_si->Write("h_th_y_mu_vs_th_y_si");
       }
     };
 
