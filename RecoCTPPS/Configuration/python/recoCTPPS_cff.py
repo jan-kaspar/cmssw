@@ -4,8 +4,8 @@ import FWCore.ParameterSet.Config as cms
 from Geometry.VeryForwardGeometry.geometryRP_cfi import *
 
 # alignments
-from Geometry.VeryForwardGeometryBuilder.ctppsIncludeAlignments_cfi import *
-ctppsIncludeAlignments.RealFiles = cms.vstring("Alignment/CTPPS/data/RPixGeometryCorrections.xml")
+from Geometry.VeryForwardGeometryBuilder.ctppsIncludeAlignmentsFromXML_cfi import *
+ctppsIncludeAlignmentsFromXML.RealFiles = cms.vstring("Alignment/CTPPS/data/RPixGeometryCorrections.xml")
 
 # reconstruction sequences
 from RecoCTPPS.TotemRPLocal.totemRPLocalReconstruction_cff import *
