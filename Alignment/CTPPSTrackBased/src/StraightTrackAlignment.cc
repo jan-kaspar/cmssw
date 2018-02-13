@@ -294,10 +294,11 @@ void StraightTrackAlignment::Begin(const EventSetup &es)
   }
 
   // initiate the algorithms
-  for (vector<AlignmentAlgorithm *>::iterator it = algorithms.begin(); it != algorithms.end(); ++it)
-    (*it)->Begin(es);
+  for (const auto &a : algorithms)
+    a->Begin(es);
 
   // get initial alignments
+  // TODO: remove try-catch block
   try
   {
     ESHandle<RPAlignmentCorrectionsData> h;
@@ -816,44 +817,36 @@ void StraightTrackAlignment::Finish()
   PrintQuantitiesLine(results);
   PrintLineSeparator(results);
 
-  // save results
-  // TODO: fix
-  /*
+  // save results as alignment XML files
   for (unsigned int a = 0; a < results.size(); a++)
   {
-    // convert readout corrections to X and Y
-    for (auto it = results[a].begin(); it != results[a].end(); ++it)
+    // convert readout-direction corrections to X and Y
+    RPAlignmentCorrectionsData convertedAlignments;
+    for (const auto &p : results[a])
     {
-      const DetGeometry &d = task.geometry.Get(it->first);
-      const auto dirData1 = d.GetDirectionData(1);
-      const auto dirData2 = d.GetDirectionData(2);
-      it->second.readoutTranslationsToXY(dirData1.dx, dirData1.dy, dirData2.dx, dirData2.dy);
+      const DetGeometry &d = task.geometry.Get(p.first);
+      const auto dir1 = d.GetDirectionData(1);
+      const auto dir2 = d.GetDirectionData(2);
+
+      const double D = dir1.dx*dir2.dy - dir1.dy*dir2.dx;
+      const double sh_x = (dir2.dy * p.second.getShR1() - dir1.dy * p.second.getShR2()) / D;
+      const double sh_y = (-dir2.dx * p.second.getShR1() + dir1.dx * p.second.getShR2()) / D;
+
+      const RPAlignmentCorrectionData corr(sh_x, sh_y, p.second.getShZ(), 0., 0., p.second.getRotZ());
+      convertedAlignments.addSensorCorrection(p.first, corr, false);
     }
 
-    // write non-cumulative results
+    // write non-cumulative alignments
     if (!fileNamePrefix.empty())
     {
-      RPAlignmentCorrectionsMethods::WriteXMLFile(results[a], fileNamePrefix + algorithms[a]->GetName() + ".xml",
-        preciseXMLFormat, algorithms[a]->HasErrorEstimate(), true, false, false, true);
-    }
-
-    // convert shr to xy, normalize z rotations
-    RPAlignmentCorrectionsData convertedAlignments = results[a];
-    for (auto it = convertedAlignments.sensors.begin(); it != convertedAlignments.sensors.end(); ++it)
-    {
-      const DetGeometry &g = task.geometry.Get(it->first);
-      auto d1 = g.GetDirectionData(1);
-      auto d2 = g.GetDirectionData(2);
-
-      it->second.readoutTranslationsToXY(d1.dx, d1.dy, d2.dx, d2.dy);
-
-      it->second.normalizeRotationZ();
+      RPAlignmentCorrectionsMethods::writeToXML(convertedAlignments, fileNamePrefix + algorithms[a]->GetName() + ".xml",
+        preciseXMLFormat, false, true, true, true, true);
     }
 
     // merge alignments
     RPAlignmentCorrectionsData cumulativeAlignments;
-    cumulativeAlignments.AddCorrections(initialAlignments, false);
-    cumulativeAlignments.AddCorrections(convertedAlignments, false);
+    cumulativeAlignments.addCorrections(initialAlignments, false, true, true);
+    cumulativeAlignments.addCorrections(convertedAlignments, false, true, true);
 
     // write expanded and factored results
     if (!expandedFileNamePrefix.empty() || !factoredFileNamePrefix.empty())
@@ -870,18 +863,17 @@ void StraightTrackAlignment::Finish()
 
       if (!expandedFileNamePrefix.empty())
       {
-        RPAlignmentCorrectionsMethods::WriteXMLFile(expandedAlignments, expandedFileNamePrefix + algorithms[a]->GetName() + ".xml",
-          preciseXMLFormat, false, false, true, false, true);
+        RPAlignmentCorrectionsMethods::writeToXML(expandedAlignments, expandedFileNamePrefix + algorithms[a]->GetName() + ".xml",
+          preciseXMLFormat, false, true, true, true, true);
       }
 
       if (!factoredFileNamePrefix.empty())
       {
-        RPAlignmentCorrectionsMethods::WriteXMLFile(factoredAlignments, factoredFileNamePrefix + algorithms[a]->GetName() + ".xml",
-          preciseXMLFormat, false, false, true, false, true);
+        RPAlignmentCorrectionsMethods::writeToXML(factoredAlignments, factoredFileNamePrefix + algorithms[a]->GetName() + ".xml",
+          preciseXMLFormat, false, true, true, true, true);
       }
     }
   }
-  */
 
   // prepare algorithms for destructions
   for (const auto &algorithm : algorithms)

@@ -61,7 +61,4 @@ class AlignmentResult
     inline void setRotZUnc(const double &v) { rot_z_unc = v; }
 };
 
-// TODO: needed ??
-//std::ostream& operator<<(std::ostream& s, const RPAlignmentCorrectionData &corr);
-
 #endif

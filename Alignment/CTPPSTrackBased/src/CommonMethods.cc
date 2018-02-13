@@ -9,6 +9,7 @@
 #include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
 
 #include "DataFormats/CTPPSAlignment/interface/RPAlignmentCorrectionData.h"
+#include "DataFormats/CTPPSAlignment/interface/RPAlignmentCorrectionsData.h"
 
 #include "Alignment/CTPPSTrackBased/interface/CommonMethods.h"
 #include "Alignment/CTPPSTrackBased/interface/AlignmentGeometry.h"
@@ -36,21 +37,19 @@ void CommonMethods::FactorRPFromSensorCorrections(const RPAlignmentCorrectionsDa
   RPAlignmentCorrectionsData &expandedAlignments, RPAlignmentCorrectionsData &factoredAlignments,
   const AlignmentGeometry &geometry, bool equalWeights, unsigned int verbosity)
 {
-  // TODO: fix
-  /*
   // clean first
-  expandedAlignments.Clear();
-  factoredAlignments.Clear();
+  expandedAlignments.clear();
+  factoredAlignments.clear();
 
   // save full sensor alignments
   map<unsigned int, RPAlignmentCorrectionData> fullAlignments;
   map<unsigned int, set<unsigned int> > sensorsPerRP;
-  for (auto it : inputAlignments.GetSensorMap())
+  for (auto it : inputAlignments.getSensorMap())
   {
     const auto &sensorId = it.first;
 
     // RP errors are coming from the previous iteration and shall be discarded!
-    fullAlignments[sensorId] = inputAlignments.GetFullSensorCorrection(sensorId, false);
+    fullAlignments[sensorId] = inputAlignments.getFullSensorCorrection(sensorId, false);
 
     sensorsPerRP[CTPPSDetId(sensorId).getRPId()].insert(sensorId);
   }
@@ -58,7 +57,7 @@ void CommonMethods::FactorRPFromSensorCorrections(const RPAlignmentCorrectionsDa
   // convert full alignments to expandedAlignments
   for (const auto it : fullAlignments)
   {
-    expandedAlignments.SetSensorCorrection(it.first, it.second);
+    expandedAlignments.setSensorCorrection(it.first, it.second);
   }
 
   // do the factorization RP per RP
@@ -91,11 +90,11 @@ void CommonMethods::FactorRPFromSensorCorrections(const RPAlignmentCorrectionsDa
         B(idx, 0) = d2.dx;
         B(idx, 1) = d2.dy;
         
-        M(idx) = d2.dx * fullAlignments[senId].sh_x() + d2.dy * fullAlignments[senId].sh_y();
+        M(idx) = d2.dx * fullAlignments[senId].getShX() + d2.dy * fullAlignments[senId].getShY();
 
         Vi(idx, idx) = 1.;
         
-        S_rotz += fullAlignments[senId].rot_z();
+        S_rotz += fullAlignments[senId].getRotZ();
 
         ++idx;
       }
@@ -112,20 +111,22 @@ void CommonMethods::FactorRPFromSensorCorrections(const RPAlignmentCorrectionsDa
 
       printf("    m_shx = %.3f, m_shy = %.3f, m_rotz = %.3f\n", m_shx, m_shy, m_rotz);
 
-      factoredAlignments.AddRPCorrection(rpId, RPAlignmentCorrectionData(m_shx, m_shy, 0., m_rotz));
+      factoredAlignments.addRPCorrection(rpId, RPAlignmentCorrectionData(m_shx, m_shy, 0., 0., 0., m_rotz));
 
       // calculate residuals
       for (const auto &senId : sensors)
       {
         auto d2 = geometry.Get(senId).GetDirectionData(2);
 
-        const double de_s = d2.dx * (fullAlignments[senId].sh_x() - m_shx) + d2.dy * (fullAlignments[senId].sh_y() - m_shy);
+        const double de_s = d2.dx * (fullAlignments[senId].getShX() - m_shx) + d2.dy * (fullAlignments[senId].getShY() - m_shy);
 
-        factoredAlignments.AddSensorCorrection(senId, RPAlignmentCorrectionData(
+        factoredAlignments.addSensorCorrection(senId, RPAlignmentCorrectionData(
           d2.dx * de_s,
           d2.dy * de_s,
           0.,
-          fullAlignments[senId].rot_z() - m_rotz
+          0.,
+          0.,
+          fullAlignments[senId].getRotZ() - m_rotz
         ));
       }
     }
@@ -140,9 +141,9 @@ void CommonMethods::FactorRPFromSensorCorrections(const RPAlignmentCorrectionsDa
       for (const auto &senId : sensors)
       {
         S_1 += 1.;
-        S_shx += fullAlignments[senId].sh_x();
-        S_shy += fullAlignments[senId].sh_y();
-        S_rotz += fullAlignments[senId].rot_z();
+        S_shx += fullAlignments[senId].getShX();
+        S_shy += fullAlignments[senId].getShY();
+        S_rotz += fullAlignments[senId].getRotZ();
       }
     
       double m_shx = S_shx / S_1;
@@ -151,19 +152,20 @@ void CommonMethods::FactorRPFromSensorCorrections(const RPAlignmentCorrectionsDa
 
       printf("    S_1 = %.3f, m_shx = %.3f, m_shy = %.3f, m_rotz = %.3f\n", S_1, m_shx, m_shy, m_rotz);
 
-      factoredAlignments.AddRPCorrection(rpId, RPAlignmentCorrectionData(m_shx, m_shy, 0., m_rotz));
+      factoredAlignments.addRPCorrection(rpId, RPAlignmentCorrectionData(m_shx, m_shy, 0., 0., 0., m_rotz));
 
       // calculate residuals
       for (const auto &senId : sensors)
       {
-        factoredAlignments.AddSensorCorrection(senId, RPAlignmentCorrectionData(
-          fullAlignments[senId].sh_x() - m_shx,
-          fullAlignments[senId].sh_y() - m_shy,
+        factoredAlignments.addSensorCorrection(senId, RPAlignmentCorrectionData(
+          fullAlignments[senId].getShX() - m_shx,
+          fullAlignments[senId].getShY() - m_shy,
           0.,
-          fullAlignments[senId].rot_z() - m_rotz
+          0.,
+          0.,
+          fullAlignments[senId].getRotZ() - m_rotz
         ));
       }
     }
   }
-  */
 }
