@@ -12,11 +12,10 @@
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/Framework/interface/ESHandle.h"
+#include "FWCore/ParameterSet/interface/FileInPath.h"
 
 #include "DataFormats/CTPPSAlignment/interface/RPAlignmentCorrectionData.h"
 #include "DataFormats/CTPPSAlignment/interface/RPAlignmentCorrectionsData.h"
-
-#include "CondFormats/AlignmentRecord/interface/RPRealAlignmentRecord.h"
 
 #include "Geometry/Records/interface/VeryForwardRealGeometryRecord.h"
 #include "Geometry/VeryForwardGeometryBuilder/interface/CTPPSGeometry.h"
@@ -24,9 +23,6 @@
 
 #include "Alignment/CTPPSTrackBased/interface/AlignmentTask.h"
 #include "Alignment/CTPPSTrackBased/interface/CommonMethods.h"
-
-#include "TMatrixD.h"
-#include "TVectorD.h"
 
 /**
  *\brief Modifies the alignment modes unconstrained by the track-based alignment.
@@ -36,20 +32,12 @@ class CTPPSModifySingularModes : public edm::EDAnalyzer
   public:
     CTPPSModifySingularModes(const edm::ParameterSet &ps); 
 
-    ~CTPPSModifySingularModes()
-    {
-    }
-
   private:
     edm::ParameterSet ps;
 
-    virtual void beginRun(edm::Run const&, edm::EventSetup const&);
+    virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
 
-    virtual void analyze(const edm::Event &e, const edm::EventSetup &es)
-    {
-    }
-
-    virtual void endJob()
+    virtual void analyze(const edm::Event &e, const edm::EventSetup &es) override
     {
     }
 };
@@ -77,7 +65,8 @@ void CTPPSModifySingularModes::beginRun(edm::Run const&, edm::EventSetup const& 
   double de_rho1 = ps.getUntrackedParameter<double>("de_rho1");
   double de_rho2 = ps.getUntrackedParameter<double>("de_rho2");
 
-  string inputFile = ps.getUntrackedParameter<string>("inputFile");
+  FileInPath inputFileInPath(ps.getUntrackedParameter<string>("inputFile"));
+  string inputFile = inputFileInPath.fullPath();
   string outputFile = ps.getUntrackedParameter<string>("outputFile");
 
   // validate config parameters
