@@ -136,7 +136,7 @@ void CTPPSModifySingularModes::beginRun(edm::Run const&, edm::EventSetup const& 
 
   // save output
   RPAlignmentCorrectionsMethods::writeToXML(outputFactored, outputFile, false, false,
-    true, false, false, true);
+    true, true, true, true);
 
 // TODO: use or remove
 #if 0
